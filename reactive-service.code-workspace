@@ -1,0 +1,23 @@
+{
+	"folders": [
+    {
+      "name": "base",
+			"path": "./"
+    },
+    {
+      "name": "core",
+			"path": "./packages/core/"
+    },
+		{
+      "name": "react",
+			"path": "./packages/react/"
+    },
+  ],
+  "settings": {
+    "eslint.workingDirectories": [
+      {
+        "pattern": "./packages/*/"
+      } 
+    ]
+  }
+}

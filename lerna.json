@@ -1,0 +1,23 @@
+{
+  "version": "0.0.3",
+  "npmClient": "npm",
+  "tagVersionPrefix": "v",
+  "command": {
+    "publish": {
+      "ignoreChanges": [
+        "ignored-file",
+        "*.md"
+      ],
+      "message": "chore(release): publish"
+    },
+    "bootstrap": {
+      "ignore": "ignored-*",
+      "npmClientArgs": [
+        "--no-package-lock"
+      ]
+    }
+  },
+  "packages": [
+    "packages/*"
+  ]
+}

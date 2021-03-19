@@ -1,0 +1,24 @@
+{
+  "name": "@reactive-service/core",
+  "version": "0.0.1",
+  "description": "a service tool for react with rxjs",
+  "main": "lib/index.js",
+  "module": "es/index.js",
+  "scripts": {
+    "lint": "eslint src/**/* --ext .js,.ts,.tsx",
+    "build": "npm run build:cjs && npm run build:es",
+    "build:cjs": "tsc --project tsconfig.build.cjs.json",
+    "build:es": "tsc --project tsconfig.build.es.json"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ccqgithub/reactive-service.git"
+  },
+  "author": "Season Chen",
+  "license": "MIT",
+  "dependencies": {},
+  "peerDependencies": {
+    "rxjs": "~6.0.0"
+  },
+  "devDependencies": {}
+}

@@ -1,0 +1,29 @@
+{
+  "name": "reactive-service",
+  "private": true,
+  "description": "a service tool for react with rxjs",
+  "scripts": {
+    "build-core": "tsc --project build/core/tsconfig.build.cjs.json && tsc --project build/core/tsconfig.build.es.json",
+    "build-react": "tsc --project build/react/tsconfig.build.cjs.json && tsc --project build/react/tsconfig.build.es.json",
+    "publish": "lerna publish --skip-git"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ccqgithub/reactive-service.git"
+  },
+  "dependencies": {
+    "@types/react": "^17.0.3",
+    "typescript": "^4.2.3"
+  },
+  "devDependencies": {
+    "lerna": "^3.22.1",
+    "@typescript-eslint/eslint-plugin": "^4.17.0",
+    "@typescript-eslint/parser": "^4.17.0",
+    "eslint": "^6.8.0",
+    "eslint-config-prettier": "^8.1.0",
+    "eslint-plugin-prettier": "^3.3.1",
+    "eslint-plugin-react": "^7.22.0",
+    "eslint-plugin-react-hooks": "^4.2.0",
+    "prettier": "^1.19.1"
+  }
+}
