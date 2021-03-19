@@ -13,10 +13,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.combineAnyLatest = exports.Service = exports.Injector = exports.config = void 0;
+exports.combineAnyLatest = exports.Service = exports.Injector = exports.Disposable = exports.config = void 0;
 __exportStar(require("./types"), exports);
 var config_1 = require("./config");
 Object.defineProperty(exports, "config", { enumerable: true, get: function () { return __importDefault(config_1).default; } });
+var disposable_1 = require("./disposable");
+Object.defineProperty(exports, "Disposable", { enumerable: true, get: function () { return __importDefault(disposable_1).default; } });
 var injector_1 = require("./injector");
 Object.defineProperty(exports, "Injector", { enumerable: true, get: function () { return __importDefault(injector_1).default; } });
 var service_1 = require("./service");
