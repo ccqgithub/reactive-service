@@ -1,5 +1,5 @@
 {
-  "name": "@reactive-service/vue",
+  "name": "@reactive-service/base",
   "version": "0.0.1",
   "description": "a service tool for react with rxjs",
   "main": "lib/index.js",
@@ -11,11 +11,7 @@
   "author": "Season Chen",
   "license": "MIT",
   "dependencies": {
-    "rxjs": "^6.0.0",
-    "vue": "^3.0.7"
-  },
-  "peerDependencies": {
-    "vue": "^3.0.0"
+    "rxjs": "^6.0.0"
   },
   "devDependencies": {}
 }

@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs';
-import { reactive } from 'vue';
+import { observable, runInAction } from 'mobx';
 import Injector from './injector';
 import Disposable from './disposable';
 import { InjectorProvide, InjectorProvider } from './types';
@@ -18,7 +18,7 @@ export default class Service<
 
   constructor(initialState: S, providers: InjectorProvider[] = []) {
     super();
-    this.state = reactive(initialState);
+    this.state = observable(initialState);
     // provide services
     this.$_injector = new Injector(providers, Injector.getParentInjector(this));
     this.beforeDispose(() => {

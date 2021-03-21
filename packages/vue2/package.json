@@ -1,5 +1,5 @@
 {
-  "name": "@reactive-service/vue",
+  "name": "@reactive-service/vue2",
   "version": "0.0.1",
   "description": "a service tool for react with rxjs",
   "main": "lib/index.js",
@@ -12,7 +12,7 @@
   "license": "MIT",
   "dependencies": {
     "rxjs": "^6.0.0",
-    "vue": "^3.0.7"
+    "vue": "^2.6.12"
   },
   "peerDependencies": {
     "vue": "^3.0.0"

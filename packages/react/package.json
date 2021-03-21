@@ -11,11 +11,11 @@
   "author": "Season Chen",
   "license": "MIT",
   "dependencies": {
-    "@reactive-service/core": "~0.0.1"
+    "mobx": "^6.1.8",
+    "rxjs": "^6.0.0"
   },
   "peerDependencies": {
-    "react": "^16.8.0",
-    "rxjs": "^6.0.0"
+    "react": "^16.8.0"
   },
   "devDependencies": {}
 }
