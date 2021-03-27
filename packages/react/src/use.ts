@@ -1,12 +1,12 @@
-import { useCallback, useContext, useEffect, useState } from 'react';
-import { BehaviorSubject, Observable } from 'rxjs';
-import { InjectorProvide, InjectorService } from '@reactive-service/core';
-import { Context } from './context';
+import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { Subject, BehaviorSubject, Observable } from 'rxjs';
+import { InjectProvide, InjectService } from '@reactive-service/core';
+import { ServiceContext } from './context';
 import { GetService } from './types';
 
 export function useGetService(): GetService {
-  const provider = useContext(Context);
-  const getService = useCallback(
+  const provider = useContext(ServiceContext);
+  const getService = useCallback<GetService>(
     (provide) => {
       return provider.get(provide);
     },
@@ -15,19 +15,21 @@ export function useGetService(): GetService {
   return getService;
 }
 
-export function useService(provide: InjectorProvide): InjectorService {
+export function useService<S extends InjectService = InjectService>(
+  provide: InjectProvide
+): S {
   const getService = useGetService();
   return getService(provide);
 }
 
-export function useServices(provides: InjectorProvide[]): InjectorService[] {
+export function useServices(provides: InjectProvide[]): InjectService[] {
   const getService = useGetService();
   return provides.map((provide) => getService(provide));
 }
 
 export function useObservable<T = any>(
   ob$: Observable<T>,
-  defaultValue: unknown = undefined
+  defaultValue?: T
 ): any {
   const [state, setState] = useState(() => {
     if (ob$ instanceof BehaviorSubject) return ob$.value;
@@ -36,16 +38,36 @@ export function useObservable<T = any>(
 
   useEffect(() => {
     const subscription = ob$.subscribe({
-      next: (v) => setState(v),
-      error: (err) => {
-        throw err;
-      }
+      next: (v) => setState(v)
     });
-
     return () => {
       subscription.unsubscribe();
     };
   }, [ob$]);
 
   return state;
+}
+
+export function useObservableError<T = any>(
+  ob$: Observable<T>,
+  onlyAfter = false
+): any {
+  const [error, setError] = useState(null);
+  const ignore = useMemo(() => {
+    return ob$ instanceof Subject && onlyAfter && ob$.hasError;
+  }, [ob$, onlyAfter]);
+
+  useEffect(() => {
+    if (ignore) return;
+    const subscription = ob$.subscribe({
+      error: (err) => {
+        setError(err);
+      }
+    });
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [ob$, ignore]);
+
+  return error;
 }

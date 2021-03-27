@@ -1,37 +1,26 @@
-type AnyFunction = (...args: any[]) => any;
+import React from 'react';
+import {
+  InjectProvider,
+  InjectProvide,
+  InjectService
+} from '@reactive-service/core';
 
-type AnyObject = Record<string | number, any>;
+export type GetService<S extends InjectService = InjectService> = (
+  provide: InjectProvide
+) => S;
 
-export interface InjectorClass {
-  new (...args: any[]): any;
-  [x: number]: any;
-  [y: string]: any;
-}
-
-export type InjectorProvide = string | AnyObject;
-
-export type InjectorService = AnyObject;
-
-export type InjectorProvider =
-  | InjectorClass
-  | {
-      provide: InjectorProvide;
-      useClass?: InjectorClass | null;
-      useValue?: InjectorService | null;
-      dispose?: AnyFunction | null;
-    };
-
-export type GetService = (provide: InjectorProvide) => InjectorService;
-
-export type ProviderProps = {
-  providers: InjectorProvider[];
+export type ServiceProviderProps = {
+  providers?: InjectProvider[];
   children: React.ReactNode;
 };
 
-export type ConsumerProps = {
-  provides: InjectorProvide[];
-  children?: (
-    services: InjectorService[],
-    getService: GetService
-  ) => React.ReactNode;
+export type ServiceConsumerProps = {
+  providers?: InjectProvider[];
+  provides?: InjectProvide[];
+  children:
+    | ((arg: {
+        getService: GetService;
+        services: InjectService[];
+      }) => React.ReactNode)
+    | React.ReactNode;
 };
