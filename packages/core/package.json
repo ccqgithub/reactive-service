@@ -2,15 +2,31 @@
   "name": "@reactive-service/core",
   "version": "0.0.1",
   "description": "a service tool for react with rxjs",
-  "main": "lib/index.js",
-  "module": "es/index.js",
+  "main": "index.js",
+  "module": "dist/rs-core.esm-bundler.js",
+  "unpkg": "dist/rs-core.global.js",
+  "jsdelivr": "dist/rs-core.global.js",
+  "types": "dist/rs-core.d.ts",
+  "files": [
+    "index.js",
+    "dist"
+  ],
+  "buildOptions": {
+    "name": "RSCore",
+    "formats": [
+      "esm-bundler",
+      "esm-browser",
+      "cjs",
+      "global"
+    ]
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/ccqgithub/reactive-service.git"
   },
   "author": "Season Chen",
   "license": "MIT",
-  "dependencies": {
+  "peerDependencies": {
     "rxjs": "^6.6.6"
   }
 }
