@@ -7,7 +7,7 @@ type ConfigArgs = {
 };
 
 const configSettings: ConfigArgs = {
-  logLevel: 'error',
+  logLevel: process.env.NODE_ENV === 'development' ? 'info' : 'error',
   log: (msg, type: LogType = 'info') => {
     console && console[type] && console[type](msg);
   }
@@ -34,3 +34,5 @@ export const debug = (
   if (levels.indexOf(configSettings.logLevel) > levels.indexOf(type)) return;
   configSettings.log(msg, type);
 };
+
+export const empty = Symbol('empty');

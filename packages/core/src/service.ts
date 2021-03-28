@@ -1,7 +1,7 @@
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import Disposable from './disposable';
 import Injector from './injector';
-import { debug } from './util';
+import { debug, empty } from './util';
 import {
   InjectProvider,
   InjectProvide,
@@ -10,7 +10,10 @@ import {
 } from './types';
 
 export type ServiceState = Record<string, any>;
-export type ServiceSources<S> = Record<keyof S, BehaviorSubject<any>>;
+export type ServiceSources<S> = Record<
+  keyof S,
+  BehaviorSubject<any> | Subject<any>
+>;
 export type ServiceActions<AK extends string> = Record<AK, Observable<any>>;
 export type ServiceOptions<S, AK extends string> = {
   state?: S;
@@ -37,7 +40,9 @@ export default class Service<
   get state(): S {
     const state = {} as S;
     (Object.keys(this.$$) as (keyof S)[]).forEach((key) => {
-      state[key] = this.$$[key].value;
+      if (this.$$[key] instanceof BehaviorSubject) {
+        state[key] = (this.$$[key] as BehaviorSubject<any>).value;
+      }
     });
     return state;
   }
@@ -63,7 +68,11 @@ export default class Service<
     // init state
     const initialState = (args.state || {}) as S;
     (Object.keys(initialState) as (keyof S)[]).forEach((key) => {
-      this.$$[key] = new BehaviorSubject(initialState[key]);
+      if (initialState[key] === undefined || initialState[key] === empty) {
+        this.$$[key] = new Subject();
+      } else {
+        this.$$[key] = new BehaviorSubject(initialState[key]);
+      }
     });
     // init actions
     const actions = args.actions || [];

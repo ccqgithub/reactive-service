@@ -6,7 +6,7 @@ import { GetService } from './types';
 
 export function useGetService(): GetService {
   const provider = useContext(ServiceContext);
-  const getService = useCallback<GetService>(
+  const getService: GetService = useCallback(
     (provide) => {
       return provider.get(provide);
     },
@@ -18,7 +18,7 @@ export function useGetService(): GetService {
 export function useService<S extends InjectService = InjectService>(
   provide: InjectProvide
 ): S {
-  const getService = useGetService();
+  const getService = useGetService() as GetService<S>;
   return getService(provide);
 }
 

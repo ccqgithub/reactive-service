@@ -2,7 +2,7 @@ var RSCore = (function (exports, rxjs) {
   'use strict';
 
   const configSettings = {
-      logLevel: 'error',
+      logLevel: process.env.NODE_ENV === 'development' ? 'info' : 'error',
       log: (msg, type = 'info') => {
           console && console[type] && console[type](msg);
       }
@@ -23,6 +23,7 @@ var RSCore = (function (exports, rxjs) {
           return;
       configSettings.log(msg, type);
   };
+  const empty = Symbol('empty');
 
   class Disposable {
       constructor() {
@@ -61,7 +62,8 @@ var RSCore = (function (exports, rxjs) {
                       dispose: provider.dispose || null
                   };
               }
-              else if (typeof provider === 'function') {
+              else if (typeof provider === 'function' &&
+                  typeof provider.prototype.constructor === 'function') {
                   // provider is a class
                   provide = provider;
                   record = {
@@ -162,7 +164,12 @@ var RSCore = (function (exports, rxjs) {
           // init state
           const initialState = (args.state || {});
           Object.keys(initialState).forEach((key) => {
-              this.$$[key] = new rxjs.BehaviorSubject(initialState[key]);
+              if (initialState[key] === undefined || initialState[key] === empty) {
+                  this.$$[key] = new rxjs.Subject();
+              }
+              else {
+                  this.$$[key] = new rxjs.BehaviorSubject(initialState[key]);
+              }
           });
           // init actions
           const actions = args.actions || [];
@@ -192,7 +199,9 @@ var RSCore = (function (exports, rxjs) {
       get state() {
           const state = {};
           Object.keys(this.$$).forEach((key) => {
-              state[key] = this.$$[key].value;
+              if (this.$$[key] instanceof rxjs.BehaviorSubject) {
+                  state[key] = this.$$[key].value;
+              }
           });
           return state;
       }
@@ -212,6 +221,7 @@ var RSCore = (function (exports, rxjs) {
   exports.Injector = Injector;
   exports.Service = Service;
   exports.config = config;
+  exports.empty = empty;
 
   Object.defineProperty(exports, '__esModule', { value: true });
 

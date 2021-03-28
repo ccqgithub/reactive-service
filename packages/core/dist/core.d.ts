@@ -1,5 +1,6 @@
 import { BehaviorSubject } from 'rxjs';
 import { Observable } from 'rxjs';
+import { Subject } from 'rxjs';
 
 export declare const config: (args: ConfigArgs) => void;
 
@@ -16,9 +17,12 @@ export declare class Disposable {
 
 declare type Disposer = () => void;
 
+export declare const empty: unique symbol;
+
 export declare type InjectClass = {
     $_parentInjector?: Injector | null;
     $_getParentInjector?: ((service: InjectClass) => Injector | null) | null;
+    dispose?: InjectDisposer;
 };
 
 export declare type InjectClassConstructor = {
@@ -38,7 +42,7 @@ export declare class Injector {
     static getParentInjector(service: InjectClass): Injector | null;
 }
 
-export declare type InjectProvide = any;
+export declare type InjectProvide = InjectClassConstructor;
 
 export declare type InjectProvider = InjectClassConstructor | {
     provide: InjectProvide;
@@ -47,7 +51,7 @@ export declare type InjectProvider = InjectClassConstructor | {
     dispose?: InjectDisposer | null;
 };
 
-export declare type InjectService = any;
+export declare type InjectService = InjectClass;
 
 declare type LogFunction = (msg: any, type: LogType) => void;
 
@@ -76,7 +80,7 @@ declare type ServiceOptions<S, AK extends string> = {
     providers?: InjectProvider[];
 };
 
-declare type ServiceSources<S> = Record<keyof S, BehaviorSubject<any>>;
+declare type ServiceSources<S> = Record<keyof S, BehaviorSubject<any> | Subject<any>>;
 
 declare type ServiceState = Record<string, any>;
 

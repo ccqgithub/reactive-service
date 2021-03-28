@@ -44,7 +44,10 @@ export default class Injector {
           useClass: provider.useClass || null,
           dispose: provider.dispose || null
         };
-      } else if (typeof provider === 'function') {
+      } else if (
+        typeof provider === 'function' &&
+        typeof provider.prototype.constructor === 'function'
+      ) {
         // provider is a class
         provide = provider;
         record = {
@@ -84,7 +87,7 @@ export default class Injector {
       );
     }
 
-    return record.value;
+    return record.value as S;
   }
 
   private $_initClass(useClass: InjectClassConstructor): InjectClass {

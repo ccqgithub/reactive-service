@@ -1,7 +1,7 @@
-import { BehaviorSubject, Subject } from 'rxjs';
+import { Subject, BehaviorSubject } from 'rxjs';
 
 const configSettings = {
-    logLevel: 'error',
+    logLevel: process.env.NODE_ENV === 'development' ? 'info' : 'error',
     log: (msg, type = 'info') => {
         console && console[type] && console[type](msg);
     }
@@ -22,6 +22,7 @@ const debug = (msg, type = 'info', condition = true) => {
         return;
     configSettings.log(msg, type);
 };
+const empty = Symbol('empty');
 
 class Disposable {
     constructor() {
@@ -60,7 +61,8 @@ class Injector {
                     dispose: provider.dispose || null
                 };
             }
-            else if (typeof provider === 'function') {
+            else if (typeof provider === 'function' &&
+                typeof provider.prototype.constructor === 'function') {
                 // provider is a class
                 provide = provider;
                 record = {
@@ -161,7 +163,12 @@ class Service extends Disposable {
         // init state
         const initialState = (args.state || {});
         Object.keys(initialState).forEach((key) => {
-            this.$$[key] = new BehaviorSubject(initialState[key]);
+            if (initialState[key] === undefined || initialState[key] === empty) {
+                this.$$[key] = new Subject();
+            }
+            else {
+                this.$$[key] = new BehaviorSubject(initialState[key]);
+            }
         });
         // init actions
         const actions = args.actions || [];
@@ -191,7 +198,9 @@ class Service extends Disposable {
     get state() {
         const state = {};
         Object.keys(this.$$).forEach((key) => {
-            state[key] = this.$$[key].value;
+            if (this.$$[key] instanceof BehaviorSubject) {
+                state[key] = this.$$[key].value;
+            }
         });
         return state;
     }
@@ -207,4 +216,4 @@ class Service extends Disposable {
     }
 }
 
-export { Disposable, Injector, Service, config };
+export { Disposable, Injector, Service, config, empty };
