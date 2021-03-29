@@ -1,5 +1,9 @@
 import Injector from './injector';
 
+export interface AnyConstructor {
+  new (...args: any[]): any;
+}
+
 export type InjectClass = {
   $_parentInjector?: Injector | null;
   $_getParentInjector?: ((service: InjectClass) => Injector | null) | null;

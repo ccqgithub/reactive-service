@@ -17,7 +17,7 @@ type ProviderRecords = Map<InjectProvide, ProviderRecord>;
 
 // service injector
 export default class Injector {
-  // 父 injector
+  // parent injector
   private parent: Injector | null = null;
   // 当前 injector 上的服务记录
   private records: ProviderRecords = new Map();
