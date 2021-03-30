@@ -10,11 +10,11 @@ export default class DI {
     this.injector = new Injector([], this.parent);
   }
 
-  inject(provide: InjectionProvide) {
+  inject = (provide: InjectionProvide) => {
     return this.injector.get(provide);
-  }
+  };
 
-  provide(providers: InjectionProvider[]) {
+  provide = (providers: InjectionProvider[]) => {
     this.injector = new Injector(providers, this.parent);
-  }
+  };
 }
