@@ -1,32 +1,39 @@
 import Injector from './injector';
+import InjectionToken from './token';
 
-export interface AnyConstructor {
-  new (...args: any[]): any;
-}
-
-export type InjectClass = {
-  $_parentInjector?: Injector | null;
-  $_getParentInjector?: ((service: InjectClass) => Injector | null) | null;
-  dispose?: InjectDisposer;
+export type InjectionClass = {
+  new (...args: any[]): Record<string, any>;
 };
 
-export type InjectClassConstructor = {
-  new (...args: any[]): InjectClass;
+export type Injectable<C extends InjectionClass> = C & {
+  prototype: {
+    $rs_parentInjector?: Injector | null;
+    $rs_getParentInjector?: (() => Injector | null) | null;
+    dispose?: ((service: InstanceType<C>) => void) | null;
+  };
 };
 
-export type InjectProvide = InjectClassConstructor;
+export type MakeInjectable = <C extends InjectionClass = InjectionClass>(
+  cls: C
+) => Injectable<C>;
 
-export type InjectService = InjectClass;
+export type InjectionProvide<
+  V = any,
+  C extends InjectionClass = InjectionClass
+> = InjectionToken<V> | C;
 
-export type InjectDisposer<S extends InjectService = InjectService> = (
-  service: S
-) => void;
+export type InjectionDisposer = <V = any>(service: V) => void;
 
-export type InjectProvider =
-  | InjectClassConstructor
+export type InjectionProvider<
+  V = any,
+  C extends InjectionClass = InjectionClass
+> =
+  | InjectionProvide<V, C>
   | {
-      provide: InjectProvide;
-      useClass?: InjectClassConstructor | null;
-      useValue?: InjectService | null;
-      dispose?: InjectDisposer | null;
+      provide: InjectionProvide<V, C>;
+      useClass?: C | null;
+      useValue?: V | null;
+      useExisting?: C | null;
+      useFactory?: ((injectable: MakeInjectable) => V) | null;
+      dispose?: InjectionDisposer | null;
     };

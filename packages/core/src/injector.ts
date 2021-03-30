@@ -1,19 +1,19 @@
 import { debug } from './util';
 import {
-  InjectClass,
-  InjectProvide,
-  InjectProvider,
-  InjectService,
-  InjectDisposer,
-  InjectClassConstructor
+  InjectionClass,
+  Injectable,
+  InjectionConstructor,
+  InjectionDisposer,
+  InjectionProvide,
+  InjectionProvider
 } from './types';
 
-type ProviderRecord = {
-  value: InjectService | null;
-  useClass?: InjectClassConstructor | null;
-  dispose?: InjectDisposer | null;
+type ProviderRecord<V = any, C extends InjectionClass = InjectionClass> = {
+  value: V | null;
+  useClass?: C | null;
+  dispose?: InjectionDisposer<V> | null;
 };
-type ProviderRecords = Map<InjectProvide, ProviderRecord>;
+type ProviderRecords = Map<InjectionProvide, ProviderRecord>;
 
 // service injector
 export default class Injector {
@@ -23,14 +23,14 @@ export default class Injector {
   private records: ProviderRecords = new Map();
 
   constructor(
-    providers: InjectProvider[] = [],
+    providers: InjectionProvider[] = [],
     parent: Injector | null = null
   ) {
     this.parent = parent;
     // provider records
     providers.forEach((provider) => {
       let record: ProviderRecord;
-      let provide: InjectProvide;
+      let provide: InjectionProvide;
 
       if (
         typeof provider === 'object' &&
