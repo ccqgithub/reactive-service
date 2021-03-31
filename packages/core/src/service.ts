@@ -1,13 +1,9 @@
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import Disposable from './disposable';
 import Injector from './injector';
+import DINode from './di';
 import { debug, empty } from './util';
-import {
-  InjectProvider,
-  InjectProvide,
-  InjectService,
-  InjectClass
-} from './types';
+import { InjectionProvider, InjectionProvide, InjectionClass } from './types';
 
 export type ServiceState = Record<string, any>;
 export type ServiceSources<S> = Record<
@@ -18,18 +14,14 @@ export type ServiceActions<AK extends string> = Record<AK, Observable<any>>;
 export type ServiceOptions<S, AK extends string> = {
   state?: S;
   actions?: AK[];
-  providers?: InjectProvider[];
+  providers?: InjectionProvider[];
 };
 
 // Service 服务基类
 export default class Service<
   S extends ServiceState = ServiceState,
   AK extends string = string
-> extends Disposable implements InjectClass {
-  private $_injector: Injector;
-  $_parentInjector?: InjectClass['$_parentInjector'];
-  $_getParentInjector?: InjectClass['$_getParentInjector'];
-
+> extends Disposable implements InstanceType<InjectionClass> {
   // displayName, for debug
   displayName = '';
   // notify sources
@@ -49,14 +41,6 @@ export default class Service<
 
   constructor(args: ServiceOptions<S, AK> = {}) {
     super();
-    // provide services
-    this.$_injector = new Injector(
-      args.providers || [],
-      Injector.getParentInjector(this)
-    );
-    this.beforeDispose(() => {
-      this.$_injector.dispose();
-    });
     // displayName
     if (!this.displayName) {
       this.displayName = this.constructor.name;
@@ -103,13 +87,6 @@ export default class Service<
         }
       });
     });
-  }
-
-  useService<S extends InjectService = InjectService>(
-    provide: InjectProvide
-  ): S {
-    const injector = this.$_injector;
-    return injector.get<S>(provide);
   }
 
   useSubscribe<T = any>(ob: Observable<T>, ...args: any[]): void {

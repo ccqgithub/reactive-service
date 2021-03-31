@@ -1,19 +1,17 @@
 import Injector from './injector';
-import { MakeInjectable, InjectionClass, Injectable } from './types';
+import DINode from './di';
 
-export default class InjectionToken<V> {
+export default class InjectionToken<V = any> {
   private _desc: string;
   factory?: ((injector: Injector) => V) | null;
 
-  constructor(desc: string, options?: { factory: (mj: MakeInjectable) => V }) {
+  constructor(desc: string, options?: { factory: (di: () => DINode) => V }) {
     this._desc = desc;
     // provide a makeInjectable to class, so they can inherits parent injector
     if (options?.factory) {
       this.factory = (injector) => {
-        const makeInjectable: MakeInjectable = (cls) => {
-          cls.prototype.$rs_getParentInjector = () => injector;
-        };
-        return options.factory(makeInjectable);
+        const di = () => new DINode(injector);
+        return options.factory(di);
       };
     }
   }

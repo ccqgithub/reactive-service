@@ -1,17 +1,23 @@
 import { debug } from './util';
+import DINode from './di';
+import InjectionToken from './token';
 import {
   InjectionClass,
-  Injectable,
-  InjectionConstructor,
   InjectionDisposer,
   InjectionProvide,
-  InjectionProvider
+  InjectionProvider,
+  InjectionValue
 } from './types';
 
-type ProviderRecord<V = any, C extends InjectionClass = InjectionClass> = {
-  value: V | null;
-  useClass?: C | null;
-  dispose?: InjectionDisposer<V> | null;
+type ProviderRecord = {
+  provide: InjectionProvide;
+  value?: any;
+  useClass?: InjectionClass | null;
+  useExisiting?: InjectionClass | null;
+  dispose?: InjectionDisposer | null;
+  useFactory?:
+    | (<P extends InjectionProvide>(di: () => DINode) => InjectionValue<P>)
+    | null;
 };
 type ProviderRecords = Map<InjectionProvide, ProviderRecord>;
 
@@ -29,80 +35,104 @@ export default class Injector {
     this.parent = parent;
     // provider records
     providers.forEach((provider) => {
-      let record: ProviderRecord;
-      let provide: InjectionProvide;
+      let record: ProviderRecord | null = null;
 
       if (
-        typeof provider === 'object' &&
-        typeof provider.provide !== 'undefined' &&
-        (provider.useClass || provider.useValue)
-      ) {
-        // provider is a config object
-        provide = provider.provide;
-        record = {
-          value: provider.useValue || null,
-          useClass: provider.useClass || null,
-          dispose: provider.dispose || null
-        };
-      } else if (
         typeof provider === 'function' &&
-        typeof provider.prototype.constructor === 'function'
+        typeof (provider as InjectionClass).prototype.constructor === 'function'
       ) {
-        // provider is a class
-        provide = provider;
+        // [class]
         record = {
-          value: null,
-          useClass: provider,
-          dispose: null
+          provide: provider as InjectionClass
         };
-      } else {
-        // error provider config
+      } else if (typeof provider === 'object') {
+        const { useValue, ...rest } = provider;
+        // [{ provide, ...}]
+        record = {
+          ...rest,
+          value: useValue
+        };
+      }
+
+      if (!record) {
         debug(provider);
         throw new Error('Error provider onfig!');
       }
 
-      this.records.set(provide, record);
+      const hasTokenFactory =
+        record.provide instanceof InjectionToken && record.useFactory;
+      if (
+        typeof record.value === 'undefined' &&
+        !record.useClass &&
+        !record.useExisiting &&
+        !record.useFactory &&
+        !hasTokenFactory
+      ) {
+        debug(provider);
+        throw new Error('Error provider onfig!');
+      }
+
+      this.records.set(record.provide, record);
     });
   }
 
-  isRegistered(provide: InjectProvide): boolean {
+  isProvided(provide: InjectionProvide): boolean {
     if (this.records.has(provide)) return true;
-    if (this.parent) return this.parent.isRegistered(provide);
+    if (this.parent) return this.parent.isProvided(provide);
     return false;
   }
 
-  get<S extends InjectService = InjectService>(provide: InjectProvide): S {
-    const record = this.records.get(provide);
-    let service;
-
-    if (record && !record.value && record.useClass) {
-      service = this.$_initClass(record.useClass);
-      record.value = service;
-    }
-
-    if (!record || !record.value) {
+  get<P extends InjectionProvide>(
+    provide: P,
+    opts: { optional: boolean } = { optional: false }
+  ): InjectionValue<P> | null {
+    if (!this.isProvided(provide) && !opts.optional) {
       debug(provide, 'error');
       throw new Error(
-        `The service not be registered on this injector or any of the parent injector!`
+        `Service of this provide not be registered on this injector or any of the parent injectors!`
       );
     }
 
-    return record.value as S;
+    // no provider
+    const record = this.records.get(provide);
+    if (!record) return null;
+
+    // lazy init service
+    if (typeof record.value === 'undefined') {
+      this.$_initRecord(record);
+    }
+
+    return record.value || null;
   }
 
-  private $_initClass(useClass: InjectClassConstructor): InjectClass {
-    // 实例化类的时候，绑定一个parent injector（this injector），这样的话，这个类在内部依赖其他服务的时候，就能使用它
-    const lastGetParentInjector =
-      useClass.prototype.$_getParentInjector || null;
-    useClass.prototype.$_getParentInjector = () => {
-      return this;
-    };
-    const service = new useClass();
-    service.$_parentInjector = this;
-    service.$_getParentInjector = null;
-    useClass.prototype.$_getParentInjector = lastGetParentInjector;
+  private $_initRecord(record: ProviderRecord): void {
+    const di = () => new DINode(this);
 
-    return service;
+    // use class
+    if (record.useClass) {
+      record.value = new record.useClass(di()) as InjectionValue<
+        typeof record.useClass
+      >;
+      return;
+    }
+
+    // alias: use exisiting
+    if (record.useExisiting) {
+      record.value = this.get(record.useExisiting) as InjectionValue<
+        typeof record.provide
+      >;
+      return;
+    }
+
+    // use factory
+    if (record.useFactory) {
+      record.value = record.useFactory<typeof record.provide>(di);
+    }
+
+    // injection token's default value
+    if (record.provide instanceof InjectionToken && record.provide.factory) {
+      record.value = record.provide.factory(this);
+    }
   }
 
   dispose(): void {
@@ -111,25 +141,10 @@ export default class Injector {
       if (record.dispose) {
         record.dispose(record.value);
       } else if (typeof record.value.dispose === 'function') {
-        (record.value.dispose as InjectDisposer)(record.value);
+        record.value.dispose();
       }
     }
     this.parent = null;
     this.records.clear();
-  }
-
-  // 在服务内获取父Injector
-  static getParentInjector(service: InjectClass): Injector | null {
-    let parentInjector = null;
-
-    if (typeof service.$_parentInjector === 'object') {
-      // 实例已经创建时
-      parentInjector = service.$_parentInjector;
-    } else if (typeof service.$_getParentInjector === 'function') {
-      // 还在执行构造函数中时
-      parentInjector = service.$_getParentInjector(service);
-    }
-
-    return parentInjector;
   }
 }
