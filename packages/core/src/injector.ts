@@ -1,25 +1,28 @@
+import 'reflect-metadata';
+
 import { debug } from './util';
-import DINode from './di';
 import InjectionToken from './token';
+import { Inject, injectMetadataKey, InjectMetadata } from './inject';
 import {
   InjectionClass,
   InjectionDisposer,
-  InjectionProvide,
   InjectionProvider,
-  InjectionValue
+  InjectionValue,
+  InjectionGet,
+  ConstructorType
 } from './types';
 
 type ProviderRecord = {
-  provide: InjectionProvide;
+  provide: InjectionClass;
   value?: any;
-  useClass?: InjectionClass | null;
+  useClass?: ConstructorType<InjectionClass> | null;
   useExisiting?: InjectionClass | null;
   dispose?: InjectionDisposer | null;
   useFactory?:
-    | (<P extends InjectionProvide>(di: () => DINode) => InjectionValue<P>)
+    | (<P extends InjectionClass>(inject: InjectionGet) => InjectionValue<P>)
     | null;
 };
-type ProviderRecords = Map<InjectionProvide, ProviderRecord>;
+type ProviderRecords = Map<InjectionClass, ProviderRecord>;
 
 // service injector
 export default class Injector {
@@ -39,11 +42,13 @@ export default class Injector {
 
       if (
         typeof provider === 'function' &&
-        typeof (provider as InjectionClass).prototype.constructor === 'function'
+        typeof (provider as ConstructorType<InjectionClass>).prototype
+          .constructor === 'function'
       ) {
         // [class]
         record = {
-          provide: provider as InjectionClass
+          provide: provider as InjectionClass,
+          useClass: provider as ConstructorType<InjectionClass>
         };
       } else if (typeof provider === 'object') {
         const { useValue, ...rest } = provider;
@@ -76,13 +81,13 @@ export default class Injector {
     });
   }
 
-  isProvided(provide: InjectionProvide): boolean {
+  isProvided(provide: InjectionClass): boolean {
     if (this.records.has(provide)) return true;
     if (this.parent) return this.parent.isProvided(provide);
     return false;
   }
 
-  get<P extends InjectionProvide>(
+  get<P extends InjectionClass>(
     provide: P,
     opts: { optional: boolean } = { optional: false }
   ): InjectionValue<P> | null {
@@ -106,10 +111,16 @@ export default class Injector {
   }
 
   private $_initRecord(record: ProviderRecord): void {
-    const di = () => new DINode(this);
-
     // use class
     if (record.useClass) {
+      const metadata: InjectMetadata[] =
+        Reflect.getOwnMetadata(injectMetadataKey, record.useClass) || [];
+      const args = metadata.forEach((item, i) => {
+        if (typeof item !== 'object') return undefined;
+        const { provide, optional } = item;
+        const service = this.get(provide);
+      });
+
       record.value = new record.useClass(di()) as InjectionValue<
         typeof record.useClass
       >;

@@ -1,5 +1,8 @@
 import InjectionToken from './token';
-import DINode from './di';
+
+export type ConstructorType<C> = {
+  new (...args: any[]): C;
+};
 
 export type InjectionClass = {
   dispose?: (() => void) | null;
@@ -11,17 +14,20 @@ export type InjectionValue<P extends InjectionClass> = P extends InjectionToken<
   ? V
   : P;
 
-export type InjectionDisposer = <P extends InjectionClass>(
+export type InjectionDisposer<P extends InjectionClass> = (
   service: InjectionValue<P>
 ) => void;
 
-export type InjectionProvider = {
-  provide: InjectionClass;
-  useValue?: any;
-  useClass?: InjectionClass | null;
-  useExisting?: InjectionClass | null;
-  useFactory?:
-    | (<P extends InjectionClass>(di: () => DINode) => InjectionValue<P>)
-    | null;
-  dispose?: InjectionDisposer | null;
+export type InjectionGet = <P extends InjectionClass>(
+  provide: P
+) => InjectionValue<P>;
+
+export type InjectionProvider<P extends InjectionClass = InjectionClass> = {
+  provide: P;
+  useValue?: InjectionValue<P>;
+  useClass?: ConstructorType<P> | null;
+  useExisting?: P | null;
+  useFactory?: ((inject: InjectionGet) => InjectionValue<P>) | null;
+  deps?: InjectionClass[];
+  dispose?: InjectionDisposer<P> | null;
 };
