@@ -2,12 +2,18 @@ import { BehaviorSubject } from 'rxjs';
 import { Observable } from 'rxjs';
 import { Subject } from 'rxjs';
 
-export declare const config: (args: ConfigArgs) => void;
+export declare const config: (args: Partial<ConfigArgs>) => void;
 
 declare type ConfigArgs = {
     logLevel: LogLevel;
     log: LogFunction;
 };
+
+export declare type ConstructorType<C> = {
+    new (...args: any[]): C;
+};
+
+export declare const debug: (msg: unknown, type?: LogType, condition?: boolean) => void;
 
 export declare class Disposable {
     private $_disposers;
@@ -19,39 +25,52 @@ declare type Disposer = () => void;
 
 export declare const empty: unique symbol;
 
-export declare type InjectClass = {
-    $_parentInjector?: Injector | null;
-    $_getParentInjector?: ((service: InjectClass) => Injector | null) | null;
-    dispose?: InjectDisposer;
+export declare const Inject: <P extends InjectionProvide = InjectionProvide>(provide: P, args?: {
+    optional?: boolean;
+}) => (target: ConstructorType<P>, propertyKey: string | symbol | undefined, parameterIndex: number) => void;
+
+export declare type InjectionClass = {
+    dispose?: (() => void) | null;
 };
 
-export declare type InjectClassConstructor = {
-    new (...args: any[]): InjectClass;
+export declare type InjectionDisposer = <P extends InjectionProvide = InjectionProvide>(service: InjectionValue<P>) => void;
+
+export declare type InjectionGet = <P extends InjectionProvide>(provide: P, opts?: {
+    optional?: boolean;
+}) => InjectionValue<P> | null;
+
+export declare type InjectionProvide = InjectionToken | InjectionClass;
+
+export declare type InjectionProvider = {
+    provide: InjectionProvide;
+    useValue?: any;
+    useClass?: ConstructorType<InjectionClass> | null;
+    useExisting?: InjectionProvide | null;
+    useFactory?: ((inject: InjectionGet) => InjectionValue<InjectionProvide>) | null;
+    deps?: InjectionProvide[];
+    dispose?: InjectionDisposer | null;
 };
 
-export declare type InjectDisposer<S extends InjectService = InjectService> = (service: S) => void;
+export declare class InjectionToken<V = any> {
+    private _desc;
+    factory?: ((inject: InjectionGet) => V) | null;
+    constructor(desc: string, options?: {
+        factory: (inject: InjectionGet) => V;
+    });
+    toString(): string;
+}
+
+export declare type InjectionValue<P extends InjectionProvide> = P extends InjectionToken<infer V> ? V : P;
 
 export declare class Injector {
     private parent;
     private records;
-    constructor(providers?: InjectProvider[], parent?: Injector | null);
-    isRegistered(provide: InjectProvide): boolean;
-    get<S extends InjectService = InjectService>(provide: InjectProvide): S;
-    private $_initClass;
+    constructor(providers?: (InjectionProvider | InjectionProvide)[], parent?: Injector | null);
+    isProvided(provide: InjectionProvide): boolean;
+    get<P extends InjectionProvide>(provide: P): InjectionValue<P> | null;
+    private $_initRecord;
     dispose(): void;
-    static getParentInjector(service: InjectClass): Injector | null;
 }
-
-export declare type InjectProvide = InjectClassConstructor;
-
-export declare type InjectProvider = InjectClassConstructor | {
-    provide: InjectProvide;
-    useClass?: InjectClassConstructor | null;
-    useValue?: InjectService | null;
-    dispose?: InjectDisposer | null;
-};
-
-export declare type InjectService = InjectClass;
 
 declare type LogFunction = (msg: any, type: LogType) => void;
 
@@ -59,29 +78,26 @@ declare type LogLevel = 'info' | 'warn' | 'error' | 'never';
 
 declare type LogType = 'info' | 'warn' | 'error';
 
-export declare class Service<S extends ServiceState = ServiceState, AK extends string = string> extends Disposable implements InjectClass {
-    private $_injector;
-    $_parentInjector?: InjectClass['$_parentInjector'];
-    $_getParentInjector?: InjectClass['$_getParentInjector'];
+export declare class Service<S extends Record<string, any> = Record<string, any>, A extends Record<string, any> = Record<string, any>> extends Disposable implements InjectionClass {
     displayName: string;
     $$: ServiceSources<S>;
-    $: ServiceActions<AK>;
+    $: ServiceActions<A>;
     get state(): S;
-    constructor(args?: ServiceOptions<S, AK>);
-    useService<S extends InjectService = InjectService>(provide: InjectProvide): S;
-    useSubscribe<T = any>(ob: Observable<T>, ...args: any[]): void;
+    constructor(args?: ServiceOptions<S, A>);
+    subscribe<T = any>(ob: Observable<T>, ...args: any[]): void;
 }
 
-declare type ServiceActions<AK extends string> = Record<AK, Observable<any>>;
-
-declare type ServiceOptions<S, AK extends string> = {
-    state?: S;
-    actions?: AK[];
-    providers?: InjectProvider[];
+declare type ServiceActions<A extends Record<string, any>> = {
+    [P in keyof A]: Observable<A[P]>;
 };
 
-declare type ServiceSources<S> = Record<keyof S, BehaviorSubject<any> | Subject<any>>;
+declare type ServiceOptions<S extends Record<string, any>, A extends Record<string, any>> = {
+    state?: S;
+    actions?: (keyof A)[];
+};
 
-declare type ServiceState = Record<string, any>;
+declare type ServiceSources<S extends Record<string, any>> = {
+    [P in keyof S]: BehaviorSubject<S[P]> | Subject<S[P]>;
+};
 
 export { }

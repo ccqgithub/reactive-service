@@ -18,12 +18,17 @@ const ServiceProvider = (props) => {
     return (React__default.createElement(ServiceContext.Provider, { value: injector }, children));
 };
 const ServiceConsumer = (props) => {
-    const parentInjector = React.useContext(ServiceContext);
-    const getService = (provide) => parentInjector.get(provide);
-    const { provides = [] } = props;
-    const services = provides.map((provide) => getService(provide));
+    const injector = React.useContext(ServiceContext);
+    const getService = (provide, opts = {}) => {
+        const { optional = false } = opts;
+        const service = injector.get(provide);
+        if (!service && !optional) {
+            core.debug(provide, 'error');
+            throw new Error(`Can not find the service, you provide it?`);
+        }
+    };
     return typeof props.children === 'function'
-        ? props.children({ services, getService })
+        ? props.children({ getService })
         : props.children;
 };
 
@@ -34,10 +39,10 @@ function useGetService() {
     }, [provider]);
     return getService;
 }
-function useService(provide) {
+const useService = (provide) => {
     const getService = useGetService();
     return getService(provide);
-}
+};
 function useServices(provides) {
     const getService = useGetService();
     return provides.map((provide) => getService(provide));

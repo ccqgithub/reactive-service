@@ -10,9 +10,10 @@ const configSettings = {
 const config = (args) => {
     const keys = Object.keys(configSettings);
     keys.forEach((key) => {
-        if (typeof args[key] !== 'undefined') {
-            configSettings[key] = args[key];
-        }
+        const t = args[key];
+        if (t == undefined)
+            return;
+        configSettings[key] = t;
     });
 };
 const debug = (msg, type = 'info', condition = true) => {
@@ -39,78 +40,167 @@ class Disposable {
     }
 }
 
+class InjectionToken {
+    constructor(desc, options) {
+        this._desc = desc;
+        this.factory = options?.factory;
+    }
+    toString() {
+        return `InjectionToken: ${this._desc}`;
+    }
+}
+
+const injectMetadataKey = Symbol('inject:constructor:params');
+/* class AppService {
+  constructor(@Inject(MessageService, { optional: true }) messageService: MessageService) {
+    console.log(messageService.getMessages());
+  }
+} */
+const Inject = (provide, args = {}) => {
+    return (target, propertyKey, parameterIndex) => {
+        if (propertyKey !== undefined) {
+            throw new Error('The @inject decorator can only be used on consturctor parameters!');
+        }
+        const existingParameters = Reflect.getOwnMetadata(injectMetadataKey, target) || [];
+        existingParameters[parameterIndex] = {
+            provide,
+            optional: !!args.optional
+        };
+        Reflect.defineMetadata(injectMetadataKey, existingParameters, target);
+    };
+};
+
 // service injector
 class Injector {
     constructor(providers = [], parent = null) {
-        // 父 injector
+        // parent injector
         this.parent = null;
         // 当前 injector 上的服务记录
         this.records = new Map();
         this.parent = parent;
         // provider records
         providers.forEach((provider) => {
-            let record;
-            let provide;
-            if (typeof provider === 'object' &&
-                typeof provider.provide !== 'undefined' &&
-                (provider.useClass || provider.useValue)) {
-                // provider is a config object
-                provide = provider.provide;
+            let record = null;
+            if (typeof provider === 'object') {
+                // [{ provide, ...}]
+                const p = provider;
+                // check
+                const keys = ['useValue', 'useClass', 'useExisiting', 'useFactory'];
+                let apear = 0;
+                keys.forEach((key) => {
+                    if (typeof p[key] !== 'undefined') {
+                        apear++;
+                    }
+                });
+                if (apear > 1) {
+                    debug(`These keys [${keys.join(',')}] can only use one, other will be ignored!`, 'warn');
+                }
+                // normalize
+                const { useValue = null, ...rest } = p;
                 record = {
-                    value: provider.useValue || null,
-                    useClass: provider.useClass || null,
-                    dispose: provider.dispose || null
+                    ...rest,
+                    value: useValue
                 };
             }
             else if (typeof provider === 'function' &&
-                typeof provider.prototype.constructor === 'function') {
-                // provider is a class
-                provide = provider;
+                typeof provider.prototype
+                    .constructor === 'function') {
+                // [class]
+                const p = provider;
                 record = {
-                    value: null,
-                    useClass: provider,
-                    dispose: null
+                    provide: p,
+                    useClass: p
                 };
             }
-            else {
-                // error provider config
+            if (!record) {
                 debug(provider);
                 throw new Error('Error provider onfig!');
             }
-            this.records.set(provide, record);
+            const hasTokenFactory = record.provide instanceof InjectionToken && record.useFactory;
+            if (typeof record.value === 'undefined' &&
+                !record.useClass &&
+                !record.useExisiting &&
+                !record.useFactory &&
+                !hasTokenFactory) {
+                debug(provider);
+                throw new Error('Error provider onfig!');
+            }
+            this.records.set(record.provide, record);
         });
     }
-    isRegistered(provide) {
+    isProvided(provide) {
         if (this.records.has(provide))
             return true;
         if (this.parent)
-            return this.parent.isRegistered(provide);
+            return this.parent.isProvided(provide);
         return false;
     }
     get(provide) {
         const record = this.records.get(provide);
-        let service;
-        if (record && !record.value && record.useClass) {
-            service = this.$_initClass(record.useClass);
-            record.value = service;
+        // not register on self
+        if (!record) {
+            if (this.parent)
+                return this.parent.get(provide);
+            return null;
         }
-        if (!record || !record.value) {
-            debug(provide, 'error');
-            throw new Error(`The service not be registered on this injector or any of the parent injector!`);
+        // lazy init service
+        if (typeof record.value === 'undefined') {
+            this.$_initRecord(record);
         }
-        return record.value;
+        return record.value || null;
     }
-    $_initClass(useClass) {
-        // 实例化类的时候，绑定一个parent injector（this injector），这样的话，这个类在内部依赖其他服务的时候，就能使用它
-        const lastGetParentInjector = useClass.prototype.$_getParentInjector || null;
-        useClass.prototype.$_getParentInjector = () => {
-            return this;
-        };
-        const service = new useClass();
-        service.$_parentInjector = this;
-        service.$_getParentInjector = null;
-        useClass.prototype.$_getParentInjector = lastGetParentInjector;
-        return service;
+    $_initRecord(record) {
+        // token 中的 factory 优先
+        // injection token's default value
+        if (record.provide instanceof InjectionToken && record.provide.factory) {
+            const inject = (provide, opts = {}) => {
+                const { optional } = opts;
+                const service = this.get(provide);
+                if (!service && !optional) {
+                    debug(record);
+                    debug(InjectionToken);
+                    throw new Error(`Can not find all deps in the DI tree when init the InjectionToken, please provide them before you use the InjectionToken's factory!`);
+                }
+                return service;
+            };
+            record.value = record.provide.factory(inject);
+        }
+        // use class
+        if (record.useClass) {
+            // find deps for the useClass
+            const metadata = Reflect.getOwnMetadata(injectMetadataKey, record.useClass) || [];
+            const deps = metadata.map((item) => {
+                if (typeof item !== 'object')
+                    return undefined;
+                const { provide, optional } = item;
+                const service = this.get(provide);
+                if (!service && !optional) {
+                    debug(record);
+                    throw new Error(`Can not find all deps in the DI tree when init the useClass, please provide them before you use the useClass!`);
+                }
+                return service;
+            });
+            record.value = new record.useClass(...deps);
+            return;
+        }
+        // alias: use exisiting
+        if (record.useExisiting) {
+            record.value = this.get(record.useExisiting);
+            return;
+        }
+        // use factory
+        if (record.useFactory) {
+            const inject = (provide, opts = {}) => {
+                const { optional } = opts;
+                const service = this.get(provide);
+                if (!service && !optional) {
+                    debug(record);
+                    throw new Error(`Can not find all deps in the DI tree when init the useFactory, please provide them before you use the useFactory!`);
+                }
+                return service;
+            };
+            record.value = record.useFactory(inject);
+        }
     }
     dispose() {
         for (const [, record] of this.records) {
@@ -120,28 +210,49 @@ class Injector {
                 record.dispose(record.value);
             }
             else if (typeof record.value.dispose === 'function') {
-                record.value.dispose(record.value);
+                record.value.dispose();
             }
         }
         this.parent = null;
         this.records.clear();
     }
-    // 在服务内获取父Injector
-    static getParentInjector(service) {
-        let parentInjector = null;
-        if (typeof service.$_parentInjector === 'object') {
-            // 实例已经创建时
-            parentInjector = service.$_parentInjector;
-        }
-        else if (typeof service.$_getParentInjector === 'function') {
-            // 还在执行构造函数中时
-            parentInjector = service.$_getParentInjector(service);
-        }
-        return parentInjector;
-    }
 }
 
 // Service 服务基类
+/*
+type State = {
+  user: User | null;
+  message: any;
+}
+type Actions = {
+  login: LoginParams;
+  logout: undefined;
+};
+class AppService extends Service<State, Actions> {
+  constructor() {
+    super({
+      state: {
+        user: null
+      },
+      actions: ['login', 'logout']
+    })
+
+    // listen actions
+    this.subscribe(
+      this.$.login.pipe(
+        map(v => v)
+      ),
+      {
+        next: () => {},
+        error: () => {}
+      }
+    )
+
+    // send notifies
+    this.$$.message.next('init');
+  }
+}
+*/
 class Service extends Disposable {
     constructor(args = {}) {
         super();
@@ -151,11 +262,7 @@ class Service extends Disposable {
         this.$$ = {};
         // actions
         this.$ = {};
-        // provide services
-        this.$_injector = new Injector(args.providers || [], Injector.getParentInjector(this));
-        this.beforeDispose(() => {
-            this.$_injector.dispose();
-        });
+        // init
         // displayName
         if (!this.displayName) {
             this.displayName = this.constructor.name;
@@ -176,9 +283,10 @@ class Service extends Disposable {
         actions.forEach((key) => {
             this.$[key] = new Subject();
         });
+        // debug
         // debugs: update state
         Object.keys(this.$$).forEach((key) => {
-            this.useSubscribe(this.$$[key], {
+            this.subscribe(this.$$[key], {
                 next: (v) => {
                     debug(`[Service ${this.displayName}]: set new state [${key}].`, 'info');
                     debug(v, 'info');
@@ -187,7 +295,7 @@ class Service extends Disposable {
         });
         // debugs: new action
         Object.keys(this.$).forEach((key) => {
-            this.useSubscribe(this.$[key], {
+            this.subscribe(this.$[key], {
                 next: (v) => {
                     debug(`[Service ${this.displayName}]: receive new action [${key}].`, 'info');
                     debug(v, 'info');
@@ -199,17 +307,14 @@ class Service extends Disposable {
     get state() {
         const state = {};
         Object.keys(this.$$).forEach((key) => {
-            if (this.$$[key] instanceof BehaviorSubject) {
-                state[key] = this.$$[key].value;
+            const source = this.$$[key];
+            if (source instanceof BehaviorSubject) {
+                state[key] = source.value;
             }
         });
         return state;
     }
-    useService(provide) {
-        const injector = this.$_injector;
-        return injector.get(provide);
-    }
-    useSubscribe(ob, ...args) {
+    subscribe(ob, ...args) {
         const subscription = ob.subscribe(...args);
         this.beforeDispose(() => {
             subscription.unsubscribe();
@@ -225,12 +330,17 @@ const ServiceProvider = (props) => {
     return (React.createElement(ServiceContext.Provider, { value: injector }, children));
 };
 const ServiceConsumer = (props) => {
-    const parentInjector = useContext(ServiceContext);
-    const getService = (provide) => parentInjector.get(provide);
-    const { provides = [] } = props;
-    const services = provides.map((provide) => getService(provide));
+    const injector = useContext(ServiceContext);
+    const getService = (provide, opts = {}) => {
+        const { optional = false } = opts;
+        const service = injector.get(provide);
+        if (!service && !optional) {
+            debug(provide, 'error');
+            throw new Error(`Can not find the service, you provide it?`);
+        }
+    };
     return typeof props.children === 'function'
-        ? props.children({ services, getService })
+        ? props.children({ getService })
         : props.children;
 };
 
@@ -241,10 +351,10 @@ function useGetService() {
     }, [provider]);
     return getService;
 }
-function useService(provide) {
+const useService = (provide) => {
     const getService = useGetService();
     return getService(provide);
-}
+};
 function useServices(provides) {
     const getService = useGetService();
     return provides.map((provide) => getService(provide));
@@ -285,4 +395,4 @@ function useObservableError(ob$, onlyAfter = false) {
     return error;
 }
 
-export { Disposable, Injector, Service, ServiceConsumer, ServiceContext, ServiceProvider, config, empty, useGetService, useObservable, useObservableError, useService, useServices };
+export { Disposable, Inject, InjectionToken, Injector, Service, ServiceConsumer, ServiceContext, ServiceProvider, config, debug, empty, useGetService, useObservable, useObservableError, useService, useServices };

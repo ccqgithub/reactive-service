@@ -129,13 +129,15 @@ function createConfig(format, output, plugins = []) {
         ];
 
   const nodePlugins =
-    packageOptions.enableNonBrowserBranches && format !== 'cjs'
+    format !== 'cjs'
       ? [
           require('@rollup/plugin-commonjs')({
             sourceMap: false
           }),
           require('rollup-plugin-node-polyfills')(),
-          require('@rollup/plugin-node-resolve').nodeResolve()
+          require('@rollup/plugin-node-resolve').nodeResolve({
+            moduleDirectories: [path.resolve(__dirname, 'node_modules')]
+          })
         ]
       : [];
 

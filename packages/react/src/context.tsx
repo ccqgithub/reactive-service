@@ -1,5 +1,5 @@
 import React, { createContext, useContext } from 'react';
-import { Injector } from '@reactive-service/core';
+import { Injector, debug } from '@reactive-service/core';
 import {
   ServiceProviderProps,
   ServiceConsumerProps,
@@ -20,12 +20,18 @@ const ServiceProvider = (props: ServiceProviderProps): React.ReactElement => {
 };
 
 const ServiceConsumer = (props: ServiceConsumerProps): React.ReactNode => {
-  const parentInjector = useContext(ServiceContext);
-  const getService: GetService = (provide) => parentInjector.get(provide);
-  const { provides = [] } = props;
-  const services = provides.map((provide) => getService(provide));
+  const injector = useContext(ServiceContext);
+  const getService: GetService = (provide, opts = {}) => {
+    const { optional = false } = opts;
+    const service = injector.get(provide);
+    if (!service && !optional) {
+      debug(provide, 'error');
+      throw new Error(`Can not find the service, you provide it?`);
+    }
+  };
+
   return typeof props.children === 'function'
-    ? props.children({ services, getService })
+    ? props.children({ getService })
     : props.children;
 };
 

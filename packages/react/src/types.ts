@@ -1,26 +1,22 @@
 import React from 'react';
 import {
-  InjectProvider,
-  InjectProvide,
-  InjectService
+  InjectionProvider,
+  InjectionProvide,
+  InjectionValue
 } from '@reactive-service/core';
 
-export type GetService<S extends InjectService = InjectService> = (
-  provide: InjectProvide
-) => S;
+export type GetService<P extends InjectionProvide = InjectionProvide> = (
+  provide: P,
+  opts?: { optional?: boolean }
+) => InjectionValue<P>;
 
 export type ServiceProviderProps = {
-  providers?: InjectProvider[];
+  providers?: InjectionProvider[];
   children: React.ReactNode;
 };
 
 export type ServiceConsumerProps = {
-  providers?: InjectProvider[];
-  provides?: InjectProvide[];
   children:
-    | ((arg: {
-        getService: GetService;
-        services: InjectService[];
-      }) => React.ReactNode)
+    | ((arg: { getService: GetService }) => React.ReactNode)
     | React.ReactNode;
 };

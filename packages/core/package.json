@@ -26,6 +26,9 @@
   },
   "author": "Season Chen",
   "license": "MIT",
+  "dependencies": {
+    "reflect-metadata": "0.1.13"
+  },
   "peerDependencies": {
     "rxjs": "^6.6.6"
   }

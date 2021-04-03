@@ -1,7 +1,7 @@
 import 'reflect-metadata';
-import { InjectionClass, ConstructorType } from './types';
+import { InjectionProvide, ConstructorType } from './types';
 
-export type InjectMetadata<P extends InjectionClass> = {
+export type InjectMetadata<P extends InjectionProvide> = {
   provide: P;
   optional: boolean;
 };
@@ -12,7 +12,7 @@ const injectMetadataKey = Symbol('inject:constructor:params');
     console.log(messageService.getMessages());
   }
 } */
-const Inject = <P extends InjectionClass = InjectionClass>(
+const Inject = <P extends InjectionProvide = InjectionProvide>(
   provide: P,
   args: { optional?: boolean } = {}
 ) => {
@@ -26,7 +26,7 @@ const Inject = <P extends InjectionClass = InjectionClass>(
         'The @inject decorator can only be used on consturctor parameters!'
       );
     }
-    const existingParameters: InjectMetadata<InjectionClass>[] =
+    const existingParameters: InjectMetadata<InjectionProvide>[] =
       Reflect.getOwnMetadata(injectMetadataKey, target) || [];
     existingParameters[parameterIndex] = {
       provide,
@@ -36,4 +36,5 @@ const Inject = <P extends InjectionClass = InjectionClass>(
   };
 };
 
-export { Inject, injectMetadataKey };
+export default Inject;
+export { injectMetadataKey };

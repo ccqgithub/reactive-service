@@ -1,6 +1,6 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { Subject, BehaviorSubject, Observable } from 'rxjs';
-import { InjectProvide, InjectService } from '@reactive-service/core';
+import { InjectionProvide } from '@reactive-service/core';
 import { ServiceContext } from './context';
 import { GetService } from './types';
 
@@ -15,14 +15,12 @@ export function useGetService(): GetService {
   return getService;
 }
 
-export function useService<S extends InjectService = InjectService>(
-  provide: InjectProvide
-): S {
-  const getService = useGetService() as GetService<S>;
+export const useService: GetService = (provide) => {
+  const getService = useGetService();
   return getService(provide);
-}
+};
 
-export function useServices(provides: InjectProvide[]): InjectService[] {
+export function useServices(provides: InjectionProvide[]): any[] {
   const getService = useGetService();
   return provides.map((provide) => getService(provide));
 }

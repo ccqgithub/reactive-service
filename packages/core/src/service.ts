@@ -1,46 +1,83 @@
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import Disposable from './disposable';
-import Injector from './injector';
-import DINode from './di';
 import { debug, empty } from './util';
-import { InjectionProvider, InjectionProvide, InjectionClass } from './types';
+import { InjectionClass } from './types';
 
-export type ServiceState = Record<string, any>;
-export type ServiceSources<S> = Record<
-  keyof S,
-  BehaviorSubject<any> | Subject<any>
->;
-export type ServiceActions<AK extends string> = Record<AK, Observable<any>>;
-export type ServiceOptions<S, AK extends string> = {
+export type ServiceSources<S extends Record<string, any>> = {
+  [P in keyof S]: BehaviorSubject<S[P]> | Subject<S[P]>;
+};
+export type ServiceActions<A extends Record<string, any>> = {
+  [P in keyof A]: Observable<A[P]>;
+};
+export type ServiceOptions<
+  S extends Record<string, any>,
+  A extends Record<string, any>
+> = {
   state?: S;
-  actions?: AK[];
-  providers?: InjectionProvider[];
+  actions?: (keyof A)[];
 };
 
 // Service 服务基类
+/* 
+type State = {
+  user: User | null;
+  message: any;
+}
+type Actions = {
+  login: LoginParams;
+  logout: undefined;
+};
+class AppService extends Service<State, Actions> {
+  constructor() {
+    super({
+      state: {
+        user: null
+      },
+      actions: ['login', 'logout']
+    })
+
+    // listen actions
+    this.subscribe(
+      this.$.login.pipe(
+        map(v => v)
+      ),
+      {
+        next: () => {},
+        error: () => {}
+      }
+    )
+
+    // send notifies
+    this.$$.message.next('init');
+  }
+} 
+*/
 export default class Service<
-  S extends ServiceState = ServiceState,
-  AK extends string = string
-> extends Disposable implements InstanceType<InjectionClass> {
+  S extends Record<string, any> = Record<string, any>,
+  A extends Record<string, any> = Record<string, any>
+> extends Disposable implements InjectionClass {
   // displayName, for debug
   displayName = '';
   // notify sources
   $$: ServiceSources<S> = {} as ServiceSources<S>;
   // actions
-  $: ServiceActions<AK> = {} as ServiceActions<AK>;
+  $: ServiceActions<A> = {} as ServiceActions<A>;
   // state
   get state(): S {
     const state = {} as S;
     (Object.keys(this.$$) as (keyof S)[]).forEach((key) => {
-      if (this.$$[key] instanceof BehaviorSubject) {
-        state[key] = (this.$$[key] as BehaviorSubject<any>).value;
+      const source = this.$$[key];
+      if (source instanceof BehaviorSubject) {
+        state[key] = source.value;
       }
     });
     return state;
   }
 
-  constructor(args: ServiceOptions<S, AK> = {}) {
+  constructor(args: ServiceOptions<S, A> = {}) {
     super();
+
+    // init
     // displayName
     if (!this.displayName) {
       this.displayName = this.constructor.name;
@@ -53,19 +90,21 @@ export default class Service<
     const initialState = (args.state || {}) as S;
     (Object.keys(initialState) as (keyof S)[]).forEach((key) => {
       if (initialState[key] === undefined || initialState[key] === empty) {
-        this.$$[key] = new Subject();
+        this.$$[key] = new Subject<S[typeof key]>();
       } else {
-        this.$$[key] = new BehaviorSubject(initialState[key]);
+        this.$$[key] = new BehaviorSubject<S[typeof key]>(initialState[key]);
       }
     });
     // init actions
     const actions = args.actions || [];
     actions.forEach((key) => {
-      this.$[key] = new Subject();
+      this.$[key] = new Subject<A[typeof key]>();
     });
+
+    // debug
     // debugs: update state
     Object.keys(this.$$).forEach((key) => {
-      this.useSubscribe(this.$$[key], {
+      this.subscribe(this.$$[key], {
         next: (v: any) => {
           debug(
             `[Service ${this.displayName}]: set new state [${key}].`,
@@ -76,8 +115,8 @@ export default class Service<
       });
     });
     // debugs: new action
-    (Object.keys(this.$) as AK[]).forEach((key) => {
-      this.useSubscribe(this.$[key], {
+    Object.keys(this.$).forEach((key) => {
+      this.subscribe(this.$[key], {
         next: (v: any) => {
           debug(
             `[Service ${this.displayName}]: receive new action [${key}].`,
@@ -89,7 +128,7 @@ export default class Service<
     });
   }
 
-  useSubscribe<T = any>(ob: Observable<T>, ...args: any[]): void {
+  subscribe<T = any>(ob: Observable<T>, ...args: any[]): void {
     const subscription = ob.subscribe(...args);
     this.beforeDispose(() => {
       subscription.unsubscribe();

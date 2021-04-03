@@ -13,14 +13,12 @@ const configSettings: ConfigArgs = {
   }
 };
 
-export const config = (args: ConfigArgs): void => {
+export const config = (args: Partial<ConfigArgs>): void => {
   const keys = Object.keys(configSettings) as (keyof ConfigArgs)[];
-  keys.forEach((key) => {
-    if (typeof args[key] !== 'undefined') {
-      (configSettings[key] as ConfigArgs[keyof ConfigArgs]) = args[
-        key
-      ] as ConfigArgs[typeof key];
-    }
+  keys.forEach(<K extends keyof ConfigArgs>(key: K) => {
+    const t = args[key] as ConfigArgs[K];
+    if (t == undefined) return;
+    configSettings[key] = t;
   });
 };
 
