@@ -2,7 +2,9 @@
   "compilerOptions": {
     "baseUrl": ".",
     "outDir": "dist",
-    "sourceMap": false,
+    "declaration": true,
+    "sourceMap": true,
+    "declarationMap": true,
     "target": "esnext",
     "module": "esnext",
     "moduleResolution": "node",
