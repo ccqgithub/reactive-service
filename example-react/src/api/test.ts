@@ -1,13 +1,13 @@
 import { of } from 'rxjs';
 import { delay } from 'rxjs/operators';
 
-type Todo = {
+export type Todo = {
   id: number;
   name: string;
   description: string;
 }
 
-type User = {
+export type User = {
   id: number;
   username: string;
   password: string;

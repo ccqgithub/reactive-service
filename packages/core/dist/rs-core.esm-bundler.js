@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import { Subject, BehaviorSubject } from 'rxjs';
 
 const configSettings = {

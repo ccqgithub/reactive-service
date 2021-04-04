@@ -3,7 +3,6 @@
   "private": true,
   "description": "a service tool for react with rxjs",
   "scripts": {
-    "dev": "node scripts/dev.js",
     "build-core": "node scripts/build.js core -t",
     "build-react": "node scripts/build.js react -t",
     "size": "node scripts/build.js vue runtime-dom size-check -p -f global",

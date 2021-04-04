@@ -13,13 +13,13 @@
   ],
   "buildOptions": {
     "name": "RSReact",
+    "fileName": "rs-react",
     "formats": [
       "esm-bundler",
       "esm-browser",
       "cjs",
       "global"
-    ],
-    "jsx": "react"
+    ]
   },
   "repository": {
     "type": "git",
@@ -28,7 +28,7 @@
   "author": "Season Chen",
   "license": "MIT",
   "dependencies": {
-    "@reactive-service/core": "^0.0.1"
+    "@reactive-service/core": "0.0.2"
   },
   "peerDependencies": {
     "rxjs": "^6.6.6",

@@ -9,7 +9,6 @@ if (!process.env.TARGET) {
 
 const packagesDir = path.resolve(__dirname, 'packages');
 const packageDir = path.resolve(packagesDir, process.env.TARGET);
-const targetName = process.env.TARGET;
 const resolve = (p) => path.resolve(packageDir, p);
 const pkg = require(resolve(`package.json`));
 const packageOptions = pkg.buildOptions || {};
@@ -50,22 +49,20 @@ const packageConfigs = packageFormats.map((format) =>
 );
 
 // prod version, replace process.env.NODE_ENV with 'production'
-if (process.env.NODE_ENV === 'production') {
-  packageFormats.forEach((format) => {
-    // no need prod build
-    if (packageOptions.prod === false) {
-      return;
-    }
-    // no need minified for cjs
-    if (format === 'cjs') {
-      packageConfigs.push(createProductionConfig(format));
-    }
-    // minifiy
-    if (/^(global|esm-browser)/.test(format)) {
-      packageConfigs.push(createMinifiedConfig(format));
-    }
-  });
-}
+packageFormats.forEach((format) => {
+  // no need prod build
+  if (packageOptions.prod === false) {
+    return;
+  }
+  // no need minified for cjs
+  if (format === 'cjs') {
+    packageConfigs.push(createProductionConfig(format));
+  }
+  // minifiy
+  if (/^(global|esm-browser)/.test(format)) {
+    packageConfigs.push(createMinifiedConfig(format));
+  }
+});
 
 export default packageConfigs;
 
@@ -78,8 +75,7 @@ function createConfig(format, output, plugins = []) {
   output.sourcemap = !!process.env.SOURCE_MAP;
   output.externalLiveBindings = false;
 
-  const isProductionBuild =
-    process.env.__DEV__ === 'false' || /\.prod\.js$/.test(output.file);
+  const isProductionBuild = /\.prod\.js$/.test(output.file);
   const isBundlerESMBuild = /esm-bundler/.test(format);
   const isBrowserESMBuild = /esm-browser/.test(format);
   const isNodeBuild = format === 'cjs';
@@ -97,7 +93,7 @@ function createConfig(format, output, plugins = []) {
   // should generate .d.ts files
   const shouldEmitDeclarations = process.env.TYPES != null && !hasTSChecked;
   const tsPlugin = ts({
-    check: process.env.NODE_ENV === 'production' && !hasTSChecked,
+    check: !hasTSChecked,
     tsconfig: resolve('tsconfig.json'),
     cacheRoot: path.resolve(__dirname, 'node_modules/.rts2_cache'),
     tsconfigOverride: {
@@ -146,15 +142,13 @@ function createConfig(format, output, plugins = []) {
         namedExports: false
       }),
       tsPlugin,
-      createReplacePlugin(
-        isProductionBuild,
+      createReplacePlugin({
         isBundlerESMBuild,
         isBrowserESMBuild,
-        // isBrowserBuild?
-        isGlobalBuild || isBrowserESMBuild,
         isGlobalBuild,
-        isNodeBuild
-      ),
+        isNodeBuild,
+        isProductionBuild
+      }),
       ...nodePlugins,
       ...plugins
     ],
@@ -165,31 +159,34 @@ function createConfig(format, output, plugins = []) {
       }
     },
     treeshake: {
-      moduleSideEffects: false
+      moduleSideEffects: true
     }
   };
 }
 
-function createReplacePlugin(
-  isProduction,
+function createReplacePlugin({
   isBundlerESMBuild,
   isBrowserESMBuild,
-  isBrowserBuild,
   isGlobalBuild,
-  isNodeBuild
-) {
+  isNodeBuild,
+  isProductionBuild
+}) {
+  let nodeEnv = `process.env.NODE_ENV`;
+  if (isProductionBuild) {
+    // no debug info
+    nodeEnv = JSON.stringify('production');
+  } else if (isBrowserESMBuild || isGlobalBuild) {
+    // has debug info
+    nodeEnv = JSON.stringify('development');
+  }
+
   const replacements = {
     __COMMIT__: `"${process.env.COMMIT}"`,
     // __VERSION__: `"${masterVersion}"`,
-    __DEV__: isBundlerESMBuild
-      ? // preserve to be handled by bundlers
-        `(process.env.NODE_ENV !== 'production')`
-      : // hard coded dev/prod builds
-        !isProduction,
     // this is only used during internal tests
     __TEST__: false,
     // If the build is expected to run directly in the browser (global / esm builds)
-    __BROWSER__: isBrowserBuild,
+    __BROWSER__: isBrowserESMBuild || isGlobalBuild,
     __GLOBAL__: isGlobalBuild,
     __ESM_BUNDLER__: isBundlerESMBuild,
     __ESM_BROWSER__: isBrowserESMBuild,
@@ -203,6 +200,8 @@ function createReplacePlugin(
       replacements[key] = process.env[key];
     }
   });
+  replacements['process.env.NODE_ENV'] = process.env.NODE_ENV || nodeEnv;
+
   return replace({
     values: replacements,
     preventAssignment: true

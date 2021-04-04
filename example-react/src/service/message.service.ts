@@ -1,9 +1,40 @@
-import { test } from '@reactive-servicehh/react2';
+import { Service } from '@reactive-service/react';
+import { map } from 'rxjs/operators';
 
-export default class MessageService {
+type State = {
+  notify: any;
+  error: Error | null;
+};
 
+type Actions = {
+  notify: any;
 }
 
-function a(t) {
-  console.log
+export default class MessageService extends Service<State, Actions> {
+  constructor() {
+    super({
+      state: {
+        notify: null,
+        error: null
+      },
+      actions: ['notify']
+    });
+
+    this.initNotify();
+  }
+
+  initNotify() {
+    this.subscribe(
+      this.$.notify.pipe(
+        map(v => {
+          this.$$.notify.next(v);
+        })
+      ),
+      {
+        error: (err: any) => {
+          this.$$.error.next(new Error(err + ''));
+        }
+      }
+    )
+  }
 }

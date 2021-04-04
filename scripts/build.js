@@ -22,8 +22,6 @@ const { targets: allTargets, fuzzyMatchTarget } = require('./utils');
 const args = require('minimist')(process.argv.slice(2));
 const targets = args._;
 const formats = args.formats || args.f;
-const devOnly = args.devOnly || args.d;
-const prodOnly = !devOnly && (args.prodOnly || args.p);
 const sourceMap = args.sourcemap || args.s;
 const isRelease = args.release;
 const buildTypes = args.t || args.types || isRelease;
@@ -82,9 +80,6 @@ async function build(target) {
     await fs.remove(`${pkgDir}/dist`);
   }
 
-  const env =
-    (pkg.buildOptions && pkg.buildOptions.env) ||
-    (devOnly ? 'development' : 'production');
   await execa(
     'rollup',
     [
@@ -92,11 +87,9 @@ async function build(target) {
       '--environment',
       [
         `COMMIT:${commit}`,
-        `NODE_ENV:${env}`,
         `TARGET:${target}`,
         formats ? `FORMATS:${formats}` : ``,
         buildTypes ? `TYPES:true` : ``,
-        prodOnly ? `PROD_ONLY:true` : ``,
         sourceMap ? `SOURCE_MAP:true` : ``
       ]
         .filter(Boolean)
@@ -160,9 +153,6 @@ async function build(target) {
 }
 
 function checkAllSizes(targets) {
-  if (devOnly) {
-    return;
-  }
   console.log();
   for (const target of targets) {
     checkSize(target);

@@ -20,7 +20,8 @@
     "jsx": "preserve",
     "lib": ["esnext", "dom"],
     "types": ["jest", "puppeteer", "node"],
-    "rootDir": "."
+    "rootDir": ".",
+    "preserveSymlinks": true
   },
   "include": [
     "packages/global.d.ts",

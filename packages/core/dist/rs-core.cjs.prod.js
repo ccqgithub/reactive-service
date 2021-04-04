@@ -2,10 +2,11 @@
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
+require('reflect-metadata');
 var rxjs = require('rxjs');
 
 const configSettings = {
-    logLevel: process.env.NODE_ENV === 'development' ? 'info' : 'error',
+    logLevel: 'error',
     log: (msg, type = 'info') => {
         console && console[type] && console[type](msg);
     }

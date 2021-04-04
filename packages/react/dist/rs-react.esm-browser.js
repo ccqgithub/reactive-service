@@ -1,43 +1,5 @@
 import { Subject, BehaviorSubject } from 'rxjs';
-
-const configSettings = {
-    logLevel: 'info' ,
-    log: (msg, type = 'info') => {
-        console && console[type] && console[type](msg);
-    }
-};
-const config$1 = (args) => {
-    const keys = Object.keys(configSettings);
-    keys.forEach((key) => {
-        const t = args[key];
-        if (t == undefined)
-            return;
-        configSettings[key] = t;
-    });
-};
-const debug = (msg, type = 'info', condition = true) => {
-    if (!condition)
-        return;
-    const levels = ['info', 'warn', 'error', 'never'];
-    if (levels.indexOf(configSettings.logLevel) > levels.indexOf(type))
-        return;
-    configSettings.log(msg, type);
-};
-const empty = Symbol('empty');
-
-class Disposable {
-    constructor() {
-        this.$_disposers = [];
-    }
-    beforeDispose(disposer) {
-        this.$_disposers.push(disposer);
-    }
-    dispose() {
-        this.$_disposers.forEach((disposer) => {
-            disposer();
-        });
-    }
-}
+import React, { createContext, useContext, useCallback, useState, useEffect, useMemo } from 'react';
 
 var global$1 = (typeof global !== "undefined" ? global :
   typeof self !== "undefined" ? self :
@@ -184,7 +146,7 @@ var argv = [];
 var version = ''; // empty string to avoid regexp issues
 var versions = {};
 var release = {};
-var config = {};
+var config$1 = {};
 
 function noop() {}
 
@@ -261,7 +223,7 @@ var browser$1 = {
   hrtime: hrtime,
   platform: platform,
   release: release,
-  config: config,
+  config: config$1,
   uptime: uptime
 };
 
@@ -1385,6 +1347,45 @@ var Reflect$1;
     });
 })(Reflect$1 || (Reflect$1 = {}));
 
+const configSettings = {
+    logLevel: 'info' ,
+    log: (msg, type = 'info') => {
+        console && console[type] && console[type](msg);
+    }
+};
+const config = (args) => {
+    const keys = Object.keys(configSettings);
+    keys.forEach((key) => {
+        const t = args[key];
+        if (t == undefined)
+            return;
+        configSettings[key] = t;
+    });
+};
+const debug = (msg, type = 'info', condition = true) => {
+    if (!condition)
+        return;
+    const levels = ['info', 'warn', 'error', 'never'];
+    if (levels.indexOf(configSettings.logLevel) > levels.indexOf(type))
+        return;
+    configSettings.log(msg, type);
+};
+const empty = Symbol('empty');
+
+class Disposable {
+    constructor() {
+        this.$_disposers = [];
+    }
+    beforeDispose(disposer) {
+        this.$_disposers.push(disposer);
+    }
+    dispose() {
+        this.$_disposers.forEach((disposer) => {
+            disposer();
+        });
+    }
+}
+
 class InjectionToken {
     constructor(desc, options) {
         this._desc = desc;
@@ -1667,4 +1668,77 @@ class Service extends Disposable {
     }
 }
 
-export { Disposable, Inject, InjectionToken, Injector, Service, config$1 as config, debug, empty };
+const ServiceContext = createContext(new Injector());
+const ServiceProvider = (props) => {
+    const parentInjector = useContext(ServiceContext);
+    const { providers = [], children } = props;
+    const injector = new Injector(providers, parentInjector);
+    return (React.createElement(ServiceContext.Provider, { value: injector }, children));
+};
+const ServiceConsumer = (props) => {
+    const injector = useContext(ServiceContext);
+    const getService = (provide, opts = {}) => {
+        const { optional = false } = opts;
+        const service = injector.get(provide);
+        if (!service && !optional) {
+            debug(provide, 'error');
+            throw new Error(`Can not find the service, you provide it?`);
+        }
+    };
+    return typeof props.children === 'function'
+        ? props.children({ getService })
+        : props.children;
+};
+
+function useGetService() {
+    const provider = useContext(ServiceContext);
+    const getService = useCallback((provide) => {
+        return provider.get(provide);
+    }, [provider]);
+    return getService;
+}
+const useService = (provide) => {
+    const getService = useGetService();
+    return getService(provide);
+};
+function useServices(provides) {
+    const getService = useGetService();
+    return provides.map((provide) => getService(provide));
+}
+function useObservable(ob$, defaultValue) {
+    const [state, setState] = useState(() => {
+        if (ob$ instanceof BehaviorSubject)
+            return ob$.value;
+        return defaultValue;
+    });
+    useEffect(() => {
+        const subscription = ob$.subscribe({
+            next: (v) => setState(v)
+        });
+        return () => {
+            subscription.unsubscribe();
+        };
+    }, [ob$]);
+    return state;
+}
+function useObservableError(ob$, onlyAfter = false) {
+    const [error, setError] = useState(null);
+    const ignore = useMemo(() => {
+        return ob$ instanceof Subject && onlyAfter && ob$.hasError;
+    }, [ob$, onlyAfter]);
+    useEffect(() => {
+        if (ignore)
+            return;
+        const subscription = ob$.subscribe({
+            error: (err) => {
+                setError(err);
+            }
+        });
+        return () => {
+            subscription.unsubscribe();
+        };
+    }, [ob$, ignore]);
+    return error;
+}
+
+export { Disposable, Inject, InjectionToken, Injector, Service, ServiceConsumer, ServiceContext, ServiceProvider, config, debug, empty, useGetService, useObservable, useObservableError, useService, useServices };
