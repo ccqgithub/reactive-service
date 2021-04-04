@@ -1,8 +1,13 @@
 {
   "extends": "../../api-extractor.json",
-  "mainEntryPointFilePath": "./dist/packages/<unscopedPackageName>/src/index.d.ts",
+  "mainEntryPointFilePath": "./dist/packages/core/src/index.d.ts",
+  "compiler": {
+    "tsconfigFilePath": "./tsconfig.json"
+  },
   "dtsRollup": {
     "enabled": true,
-    "publicTrimmedFilePath": "./dist/<unscopedPackageName>.d.ts"
+    "untrimmedFilePath": "./dist/rs-core.all.d.ts",
+    "betaTrimmedFilePath": "./dist/rs-core.beta.d.ts",
+    "publicTrimmedFilePath": "./dist/rs-core.d.ts"
   }
 }

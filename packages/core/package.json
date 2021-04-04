@@ -13,6 +13,7 @@
   ],
   "buildOptions": {
     "name": "RSCore",
+    "fileName": "rs-core",
     "formats": [
       "esm-bundler",
       "esm-browser",

@@ -7,9 +7,9 @@ if (!process.env.TARGET) {
   throw new Error('TARGET package must be specified via --environment flag.');
 }
 
-const masterVersion = require('./package.json').version;
 const packagesDir = path.resolve(__dirname, 'packages');
 const packageDir = path.resolve(packagesDir, process.env.TARGET);
+const targetName = process.env.TARGET;
 const resolve = (p) => path.resolve(packageDir, p);
 const pkg = require(resolve(`package.json`));
 const packageOptions = pkg.buildOptions || {};
@@ -19,18 +19,22 @@ const name = packageOptions.fileName || path.basename(packageDir);
 let hasTSChecked = false;
 
 const outputConfigs = {
+  // es6
   'esm-bundler': {
     file: resolve(`dist/${name}.esm-bundler.js`),
     format: `es`
   },
+  // es6 for browser
   'esm-browser': {
     file: resolve(`dist/${name}.esm-browser.js`),
     format: `es`
   },
+  // common js
   cjs: {
     file: resolve(`dist/${name}.cjs.js`),
     format: `cjs`
   },
+  // window.libName =
   global: {
     file: resolve(`dist/${name}.global.js`),
     format: `iife`
@@ -41,19 +45,23 @@ const defaultFormats = ['esm-bundler', 'cjs'];
 const inlineFormats = process.env.FORMATS && process.env.FORMATS.split(',');
 const packageFormats =
   inlineFormats || packageOptions.formats || defaultFormats;
-const packageConfigs = process.env.PROD_ONLY
-  ? []
-  : packageFormats.map((format) => createConfig(format, outputConfigs[format]));
+const packageConfigs = packageFormats.map((format) =>
+  createConfig(format, outputConfigs[format])
+);
 
+// prod version, replace process.env.NODE_ENV with 'production'
 if (process.env.NODE_ENV === 'production') {
   packageFormats.forEach((format) => {
+    // no need prod build
     if (packageOptions.prod === false) {
       return;
     }
+    // no need minified for cjs
     if (format === 'cjs') {
       packageConfigs.push(createProductionConfig(format));
     }
-    if (/^(global|esm-browser)(-runtime)?/.test(format)) {
+    // minifiy
+    if (/^(global|esm-browser)/.test(format)) {
       packageConfigs.push(createMinifiedConfig(format));
     }
   });
@@ -86,20 +94,18 @@ function createConfig(format, output, plugins = []) {
     };
   }
 
+  // should generate .d.ts files
   const shouldEmitDeclarations = process.env.TYPES != null && !hasTSChecked;
-
   const tsPlugin = ts({
     check: process.env.NODE_ENV === 'production' && !hasTSChecked,
-    tsconfig: path.resolve(__dirname, 'tsconfig.json'),
+    tsconfig: resolve('tsconfig.json'),
     cacheRoot: path.resolve(__dirname, 'node_modules/.rts2_cache'),
     tsconfigOverride: {
       compilerOptions: {
         sourceMap: output.sourcemap,
         declaration: shouldEmitDeclarations,
-        declarationMap: shouldEmitDeclarations,
-        jsx: packageOptions.jsx || 'preserve'
-      },
-      exclude: ['**/__tests__', 'test-dts']
+        declarationMap: shouldEmitDeclarations
+      }
     }
   });
   // we only need to check TS and generate declarations once for each build.
@@ -111,16 +117,7 @@ function createConfig(format, output, plugins = []) {
 
   const external =
     isGlobalBuild || isBrowserESMBuild
-      ? packageOptions.enableNonBrowserBranches
-        ? [...Object.keys(pkg.peerDependencies || {})]
-        : // normal browser builds - non-browser only imports are tree-shaken,
-          // they are only listed here to suppress warnings.
-          [
-            ...Object.keys(pkg.peerDependencies || {}),
-            'source-map',
-            '@babel/parser',
-            'estree-walker'
-          ]
+      ? [...Object.keys(pkg.peerDependencies || {})]
       : // Node / esm-bundler builds. Externalize everything.
         [
           ...Object.keys(pkg.dependencies || {}),
@@ -135,9 +132,7 @@ function createConfig(format, output, plugins = []) {
             sourceMap: false
           }),
           require('rollup-plugin-node-polyfills')(),
-          require('@rollup/plugin-node-resolve').nodeResolve({
-            moduleDirectories: [path.resolve(__dirname, 'node_modules')]
-          })
+          require('@rollup/plugin-node-resolve').nodeResolve()
         ]
       : [];
 
@@ -156,8 +151,7 @@ function createConfig(format, output, plugins = []) {
         isBundlerESMBuild,
         isBrowserESMBuild,
         // isBrowserBuild?
-        (isGlobalBuild || isBrowserESMBuild || isBundlerESMBuild) &&
-          !packageOptions.enableNonBrowserBranches,
+        isGlobalBuild || isBrowserESMBuild,
         isGlobalBuild,
         isNodeBuild
       ),
@@ -186,7 +180,7 @@ function createReplacePlugin(
 ) {
   const replacements = {
     __COMMIT__: `"${process.env.COMMIT}"`,
-    __VERSION__: `"${masterVersion}"`,
+    // __VERSION__: `"${masterVersion}"`,
     __DEV__: isBundlerESMBuild
       ? // preserve to be handled by bundlers
         `(process.env.NODE_ENV !== 'production')`

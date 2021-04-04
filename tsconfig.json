@@ -9,6 +9,7 @@
     "module": "esnext",
     "moduleResolution": "node",
     "allowJs": false,
+    "checkJs": false,
     "strict": true,
     "noUnusedLocals": true,
     "experimentalDecorators": true,
@@ -19,14 +20,12 @@
     "jsx": "preserve",
     "lib": ["esnext", "dom"],
     "types": ["jest", "puppeteer", "node"],
-    "rootDir": ".",
-    "paths": {
-      "@reactive-service/*": ["packages/*/src"]
-    }
+    "rootDir": "."
   },
   "include": [
     "packages/global.d.ts",
     "packages/*/src",
-    "packages/*/__tests__"
+    "packages/*/__tests__",
+    "example-*/*"
   ]
 }

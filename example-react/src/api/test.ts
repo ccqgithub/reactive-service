@@ -1,13 +1,25 @@
 import { of } from 'rxjs';
 import { delay } from 'rxjs/operators';
 
-const USER = {
+type Todo = {
+  id: number;
+  name: string;
+  description: string;
+}
+
+type User = {
+  id: number;
+  username: string;
+  password: string;
+}
+
+const USER: User = {
   id: 1,
   username: 'test',
   password: '123456'
 };
 
-const TODO_LIST = [];
+const TODO_LIST: Todo[] = [];
 let TODO_ID = 0;
 for (let i = 1; i <= 1000; i++) {
   TODO_ID++;
@@ -18,7 +30,7 @@ for (let i = 1; i <= 1000; i++) {
   });
 }
 
-export const login = (username, password) => {
+export const login = (username: string, password: string) => {
   if (username !== USER.username || password !== USER.password) {
     return of({
       result: null,
@@ -26,15 +38,15 @@ export const login = (username, password) => {
         message: '用户名或密码不对'
       }
     }).pipe(
-      delay('2000')
+      delay(2000)
     );
   }
 
   return of({ result: USER, error: null }).pipe(delay(2000));
 }
 
-export const userEdit = (id, { name }) => {
-  USER.name = name;
+export const userEdit = (id: number, { name }: { name: string }) => {
+  USER.username = name;
   return of({ result: USER, error: null }).pipe(delay(2000));
 }
 
@@ -56,7 +68,7 @@ export const todoList = (page = 1, size = 10) => {
   return of(data).pipe(delay(2000));
 }
 
-export const todoInfo = (id) => {
+export const todoInfo = (id: number) => {
   const info = TODO_LIST.find((item) => item.id === id);
   const data = {
     result: info,
@@ -66,8 +78,8 @@ export const todoInfo = (id) => {
   return of(data).pipe(delay(2000));
 }
 
-export const todoAdd = ({ name, description }) => {
-  const info = {
+export const todoAdd = ({ name, description }: Pick<Todo, 'name' | 'description'>) => {
+  const info: Todo = {
     id: ++TODO_ID,
     name,
     description
@@ -83,7 +95,7 @@ export const todoAdd = ({ name, description }) => {
   return of(data).pipe(delay(2000));
 }
 
-export const todoDel = (id) => {
+export const todoDel = (id: number) => {
   const i = TODO_LIST.findIndex((item) => item.id === id);
   TODO_LIST.splice(i, 1);
 
@@ -95,8 +107,9 @@ export const todoDel = (id) => {
   return of(data).pipe(delay(2000));
 }
 
-export const todoEdit = (id, { name, description  }) => {
+export const todoEdit = (id: number, { name, description } : Pick<Todo, 'name' | 'description'>) => {
   const find = TODO_LIST.find((item) => item.id === id);
+  if (!find) throw new Error('error');
   find.name = name;
   find.description = description;
 

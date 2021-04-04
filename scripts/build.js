@@ -126,16 +126,23 @@ async function build(target) {
     if (extractorResult.succeeded) {
       // concat additional d.ts to rolled-up dts
       const typesDir = path.resolve(pkgDir, 'types');
-      if (await fs.exists(typesDir)) {
-        const dtsPath = path.resolve(pkgDir, pkg.types);
-        const existing = await fs.readFile(dtsPath, 'utf-8');
-        const typeFiles = await fs.readdir(typesDir);
-        const toAdd = await Promise.all(
-          typeFiles.map((file) => {
-            return fs.readFile(path.resolve(typesDir, file), 'utf-8');
-          })
-        );
-        await fs.writeFile(dtsPath, existing + '\n' + toAdd.join('\n'));
+      try {
+        const stats = await fs.stat(typesDir);
+        if (stats.isDirectory()) {
+          const dtsPath = path.resolve(pkgDir, pkg.types);
+          const existing = await fs.readFile(dtsPath, 'utf-8');
+          const typeFiles = await fs.readdir(typesDir);
+          const toAdd = await Promise.all(
+            typeFiles.map((file) => {
+              return fs.readFile(path.resolve(typesDir, file), 'utf-8');
+            })
+          );
+          await fs.writeFile(dtsPath, existing + '\n' + toAdd.join('\n'));
+        }
+      } catch (err) {
+        if (err.code !== 'ENOENT') {
+          throw err;
+        }
       }
       console.log(
         chalk.bold(chalk.green(`API Extractor completed successfully.`))

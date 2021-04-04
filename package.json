@@ -4,7 +4,8 @@
   "description": "a service tool for react with rxjs",
   "scripts": {
     "dev": "node scripts/dev.js",
-    "build": "node scripts/build.js -t",
+    "build-core": "node scripts/build.js core -t",
+    "build-react": "node scripts/build.js react -t",
     "size": "node scripts/build.js vue runtime-dom size-check -p -f global",
     "lint": "eslint --ext .ts packages/*/src/**",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s",
@@ -33,6 +34,7 @@
     "chalk": "^2.4.2",
     "eslint": "^6.8.0",
     "eslint-config-prettier": "^8.1.0",
+    "eslint-plugin-import": "^2.22.1",
     "eslint-plugin-prettier": "^3.3.1",
     "eslint-plugin-react": "^7.22.0",
     "eslint-plugin-react-hooks": "^4.2.0",
