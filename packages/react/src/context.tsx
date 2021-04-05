@@ -1,26 +1,26 @@
 import React, { createContext, useContext } from 'react';
 import { Injector, debug } from '@reactive-service/core';
 import {
-  ServiceProviderProps,
+  ServiceInjectorProps,
   ServiceConsumerProps,
   GetService
 } from './types';
 
-const ServiceContext = createContext<Injector>(new Injector());
+const InjectorContext = createContext<Injector>(new Injector());
 
-const ServiceProvider = (props: ServiceProviderProps): React.ReactElement => {
-  const parentInjector = useContext(ServiceContext);
+const ServiceInjector = (props: ServiceInjectorProps): React.ReactElement => {
+  const parentInjector = useContext(InjectorContext);
   const { providers = [], children } = props;
   const injector = new Injector(providers, parentInjector);
   return (
-    <ServiceContext.Provider value={injector}>
+    <InjectorContext.Provider value={injector}>
       {children}
-    </ServiceContext.Provider>
+    </InjectorContext.Provider>
   );
 };
 
 const ServiceConsumer = (props: ServiceConsumerProps): React.ReactNode => {
-  const injector = useContext(ServiceContext);
+  const injector = useContext(InjectorContext);
   const getService: GetService = (provide, opts = {}) => {
     const { optional = false } = opts;
     const service = injector.get(provide);
@@ -35,4 +35,4 @@ const ServiceConsumer = (props: ServiceConsumerProps): React.ReactNode => {
     : props.children;
 };
 
-export { ServiceContext, ServiceProvider, ServiceConsumer };
+export { InjectorContext, ServiceInjector, ServiceConsumer };

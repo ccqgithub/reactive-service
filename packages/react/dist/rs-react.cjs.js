@@ -4,21 +4,23 @@ Object.defineProperty(exports, '__esModule', { value: true });
 
 var core = require('@reactive-service/core');
 var React = require('react');
+var hoistStatics = require('hoist-non-react-statics');
 var rxjs = require('rxjs');
 
 function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e['default'] : e; }
 
 var React__default = /*#__PURE__*/_interopDefaultLegacy(React);
+var hoistStatics__default = /*#__PURE__*/_interopDefaultLegacy(hoistStatics);
 
-const ServiceContext = React.createContext(new core.Injector());
-const ServiceProvider = (props) => {
-    const parentInjector = React.useContext(ServiceContext);
+const InjectorContext = React.createContext(new core.Injector());
+const ServiceInjector = (props) => {
+    const parentInjector = React.useContext(InjectorContext);
     const { providers = [], children } = props;
     const injector = new core.Injector(providers, parentInjector);
-    return (React__default.createElement(ServiceContext.Provider, { value: injector }, children));
+    return (React__default.createElement(InjectorContext.Provider, { value: injector }, children));
 };
 const ServiceConsumer = (props) => {
-    const injector = React.useContext(ServiceContext);
+    const injector = React.useContext(InjectorContext);
     const getService = (provide, opts = {}) => {
         const { optional = false } = opts;
         const service = injector.get(provide);
@@ -32,8 +34,27 @@ const ServiceConsumer = (props) => {
         : props.children;
 };
 
+/*
+一般测试，或者封装路由组件列表时使用，因为路由列表时显式添加provider不太方便
+const WrrappedComponent = () => {};
+export default withInjector({
+  providers: []
+})
+*/
+const withInjector = (args) => {
+    return (Component) => {
+        const displayName = 'withInjector(' + (Component.displayName || Component.name) + ')';
+        const Comp = React.forwardRef((props, ref) => {
+            return (React__default.createElement(ServiceInjector, { providers: args.providers },
+                React__default.createElement(Component, Object.assign({ ref: ref }, props))));
+        });
+        Comp.displayName = displayName;
+        return hoistStatics__default(Comp, Component);
+    };
+};
+
 function useGetService() {
-    const provider = React.useContext(ServiceContext);
+    const provider = React.useContext(InjectorContext);
     const getService = React.useCallback((provide) => {
         return provider.get(provide);
     }, [provider]);
@@ -84,13 +105,13 @@ function useObservableError(ob$, onlyAfter = false) {
 }
 
 exports.ServiceConsumer = ServiceConsumer;
-exports.ServiceContext = ServiceContext;
-exports.ServiceProvider = ServiceProvider;
+exports.ServiceInjector = ServiceInjector;
 exports.useGetService = useGetService;
 exports.useObservable = useObservable;
 exports.useObservableError = useObservableError;
 exports.useService = useService;
 exports.useServices = useServices;
+exports.withInjector = withInjector;
 Object.keys(core).forEach(function (k) {
   if (k !== 'default' && !exports.hasOwnProperty(k)) exports[k] = core[k];
 });

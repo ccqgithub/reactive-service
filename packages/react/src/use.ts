@@ -1,11 +1,11 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { Subject, BehaviorSubject, Observable } from 'rxjs';
 import { InjectionProvide } from '@reactive-service/core';
-import { ServiceContext } from './context';
+import { InjectorContext } from './context';
 import { GetService } from './types';
 
 export function useGetService(): GetService {
-  const provider = useContext(ServiceContext);
+  const provider = useContext(InjectorContext);
   const getService: GetService = useCallback(
     (provide) => {
       return provider.get(provide);

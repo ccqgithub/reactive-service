@@ -1,6 +1,7 @@
 export * from '@reactive-service/core';
 export * from './types';
-export { ServiceContext, ServiceProvider, ServiceConsumer } from './context';
+export { default as withInjector } from './with-injector';
+export { ServiceInjector, ServiceConsumer } from './context';
 export {
   useGetService,
   useObservable,

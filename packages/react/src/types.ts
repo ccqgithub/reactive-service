@@ -10,7 +10,7 @@ export type GetService<P extends InjectionProvide = InjectionProvide> = (
   opts?: { optional?: boolean }
 ) => InjectionValue<P>;
 
-export type ServiceProviderProps = {
+export type ServiceInjectorProps = {
   providers?: InjectionProvider[];
   children: React.ReactNode;
 };

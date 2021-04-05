@@ -28,10 +28,14 @@
   "author": "Season Chen",
   "license": "MIT",
   "dependencies": {
-    "@reactive-service/core": "0.0.2"
+    "@reactive-service/core": "0.0.2",
+    "hoist-non-react-statics": "^3.3.2"
   },
   "peerDependencies": {
-    "rxjs": "^6.6.6",
-    "react": "^16.8.0"
+    "react": "^16.8.0",
+    "rxjs": "^6.6.6"
+  },
+  "devDependencies": {
+    "@types/hoist-non-react-statics": "^3.3.1"
   }
 }

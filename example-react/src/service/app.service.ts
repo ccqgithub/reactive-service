@@ -1,5 +1,5 @@
 import { Service, Inject } from '@reactive-service/react';
-import { map } from 'rxjs/operators';
+import { map, switchMap } from 'rxjs/operators';
 import { login, User } from '../api/test';
 import MessageService from './message.service';
 
@@ -27,18 +27,23 @@ export default class AppService extends Service<State, Actions> {
     });
 
     this.messageService = messageService;
+    this.initLogin();
   }
 
   initLogin() {
     this.subscribe(
       this.$.login.pipe(
+        switchMap((v) => {
+          return login(v.username, v.password);
+        }),
         map(v => {
-          this.$$.notify.next(v);
+          this.$$.loginUser.next(v.result);
+          this.messageService.$$.notify.next('登录成功！');
         })
       ),
       {
         error: (err: any) => {
-          this.$$.error.next(new Error(err + ''));
+          this.messageService.$.notify.next(new Error(err + ''));
         }
       }
     )

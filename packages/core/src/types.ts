@@ -1,18 +1,16 @@
 import InjectionToken from './token';
 
-export type ConstructorType<C> = {
-  new (...args: any[]): C;
+export type InjectionClass = Record<string, any>;
+
+export type InjectionConstructor = {
+  new (...args: any[]): InjectionClass;
 };
 
-export type InjectionClass = {
-  dispose?: (() => void) | null;
-};
-
-export type InjectionProvide = InjectionToken | InjectionClass;
+export type InjectionProvide = InjectionToken | InjectionConstructor;
 
 export type InjectionValue<
   P extends InjectionProvide
-> = P extends InjectionToken<infer V> ? V : P;
+> = P extends InjectionToken<infer V> ? V : InstanceType<InjectionConstructor>;
 
 export type InjectionDisposer = <P extends InjectionProvide = InjectionProvide>(
   service: InjectionValue<P>
@@ -23,14 +21,15 @@ export type InjectionGet = <P extends InjectionProvide>(
   opts?: { optional?: boolean }
 ) => InjectionValue<P> | null;
 
-export type InjectionProvider = {
+export type InjectionProviderObj = {
   provide: InjectionProvide;
   useValue?: any;
-  useClass?: ConstructorType<InjectionClass> | null;
+  useClass?: InjectionConstructor | null;
   useExisting?: InjectionProvide | null;
   useFactory?:
     | ((inject: InjectionGet) => InjectionValue<InjectionProvide>)
     | null;
-  deps?: InjectionProvide[];
   dispose?: InjectionDisposer | null;
 };
+
+export type InjectionProvider = InjectionProvide | InjectionProviderObj;

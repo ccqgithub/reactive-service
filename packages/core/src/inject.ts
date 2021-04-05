@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { InjectionProvide, ConstructorType } from './types';
+import { InjectionProvide, InjectionConstructor } from './types';
 
 export type InjectMetadata<P extends InjectionProvide> = {
   provide: P;
@@ -17,7 +17,7 @@ const Inject = <P extends InjectionProvide = InjectionProvide>(
   args: { optional?: boolean } = {}
 ) => {
   return (
-    target: ConstructorType<P>,
+    target: InjectionConstructor,
     propertyKey: string | symbol | undefined,
     parameterIndex: number
   ): void => {

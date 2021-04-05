@@ -1,4 +1,4 @@
-import { BehaviorSubject, Observable, Subject } from 'rxjs';
+import { BehaviorSubject, Observable, Subject, PartialObserver } from 'rxjs';
 import Disposable from './disposable';
 import { debug, empty } from './util';
 import { InjectionClass } from './types';
@@ -7,7 +7,7 @@ export type ServiceSources<S extends Record<string, any>> = {
   [P in keyof S]: BehaviorSubject<S[P]> | Subject<S[P]>;
 };
 export type ServiceActions<A extends Record<string, any>> = {
-  [P in keyof A]: Observable<A[P]>;
+  [P in keyof A]: Subject<A[P]>;
 };
 export type ServiceOptions<
   S extends Record<string, any>,
@@ -128,6 +128,13 @@ export default class Service<
     });
   }
 
+  subscribe<T = any>(ob: Observable<T>, observer?: PartialObserver<T>): void;
+  subscribe<T = any>(
+    ob: Observable<T>,
+    next?: (value: T) => void,
+    error?: (error: any) => void,
+    complete?: () => void
+  ): void;
   subscribe<T = any>(ob: Observable<T>, ...args: any[]): void {
     const subscription = ob.subscribe(...args);
     this.beforeDispose(() => {

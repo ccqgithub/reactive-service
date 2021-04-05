@@ -8,12 +8,11 @@ const configSettings = {
     }
 };
 const config = (args) => {
-    const keys = Object.keys(configSettings);
+    const keys = Object.keys(args);
     keys.forEach((key) => {
-        const t = args[key];
-        if (t == undefined)
-            return;
-        configSettings[key] = t;
+        if (key in configSettings && typeof args[key] !== 'undefined') {
+            configSettings[key] = args[key];
+        }
     });
 };
 const debug = (msg, type = 'info', condition = true) => {
@@ -103,8 +102,8 @@ class Injector {
                 };
             }
             else if (typeof provider === 'function' &&
-                typeof provider.prototype
-                    .constructor === 'function') {
+                typeof provider.prototype.constructor ===
+                    'function') {
                 // [class]
                 const p = provider;
                 record = {

@@ -4,19 +4,19 @@ import { debug } from './util';
 import InjectionToken from './token';
 import { injectMetadataKey, InjectMetadata } from './inject';
 import {
-  InjectionClass,
   InjectionProvide,
   InjectionValue,
   InjectionDisposer,
   InjectionProvider,
+  InjectionProviderObj,
   InjectionGet,
-  ConstructorType
+  InjectionConstructor
 } from './types';
 
 type ProviderRecord = {
   provide: InjectionProvide;
   value?: any;
-  useClass?: ConstructorType<InjectionClass> | null;
+  useClass?: InjectionConstructor | null;
   useExisiting?: InjectionProvide | null;
   dispose?: InjectionDisposer | null;
   useFactory?:
@@ -33,7 +33,7 @@ export default class Injector {
   private records: ProviderRecords = new Map();
 
   constructor(
-    providers: (InjectionProvider | InjectionProvide)[] = [],
+    providers: InjectionProvider[] = [],
     parent: Injector | null = null
   ) {
     this.parent = parent;
@@ -43,12 +43,12 @@ export default class Injector {
 
       if (typeof provider === 'object') {
         // [{ provide, ...}]
-        const p = provider as InjectionProvider;
+        const p = provider as InjectionProviderObj;
         // check
         const keys = ['useValue', 'useClass', 'useExisiting', 'useFactory'];
         let apear = 0;
         keys.forEach((key) => {
-          if (typeof p[key as keyof InjectionProvider] !== 'undefined') {
+          if (typeof p[key as keyof InjectionProviderObj] !== 'undefined') {
             apear++;
           }
         });
@@ -68,14 +68,14 @@ export default class Injector {
         };
       } else if (
         typeof provider === 'function' &&
-        typeof (provider as ConstructorType<InjectionClass>).prototype
-          .constructor === 'function'
+        typeof (provider as InjectionConstructor).prototype.constructor ===
+          'function'
       ) {
         // [class]
         const p = provider as InjectionProvide;
         record = {
           provide: p,
-          useClass: p as ConstructorType<InjectionClass>
+          useClass: p as InjectionConstructor
         };
       }
 
