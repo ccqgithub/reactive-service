@@ -68,11 +68,25 @@ function useServices(provides) {
     const getService = useGetService();
     return provides.map((provide) => getService(provide));
 }
-function useObservable(ob$, defaultValue) {
+function useObservableState(ob$, defaultValue) {
     const [state, setState] = React.useState(() => {
         if (ob$ instanceof rxjs.BehaviorSubject)
             return ob$.value;
         return defaultValue;
+    });
+    React.useEffect(() => {
+        const subscription = ob$.subscribe({
+            next: (v) => setState(v)
+        });
+        return () => {
+            subscription.unsubscribe();
+        };
+    }, [ob$]);
+    return state;
+}
+function useBehaviorState(ob$) {
+    const [state, setState] = React.useState(() => {
+        return ob$.value;
     });
     React.useEffect(() => {
         const subscription = ob$.subscribe({
@@ -106,9 +120,10 @@ function useObservableError(ob$, onlyAfter = false) {
 
 exports.ServiceConsumer = ServiceConsumer;
 exports.ServiceInjector = ServiceInjector;
+exports.useBehaviorState = useBehaviorState;
 exports.useGetService = useGetService;
-exports.useObservable = useObservable;
 exports.useObservableError = useObservableError;
+exports.useObservableState = useObservableState;
 exports.useService = useService;
 exports.useServices = useServices;
 exports.withInjector = withInjector;

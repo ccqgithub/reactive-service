@@ -27,13 +27,30 @@ export function useServices(provides: InjectionProvide[]): any[] {
   return provides.map((provide) => getService(provide));
 }
 
-export function useObservable<T = any>(
+export function useObservableState<T = any>(
   ob$: Observable<T>,
   defaultValue?: T
 ): T {
   const [state, setState] = useState(() => {
     if (ob$ instanceof BehaviorSubject) return ob$.value;
     return defaultValue;
+  });
+
+  useEffect(() => {
+    const subscription = ob$.subscribe({
+      next: (v) => setState(v)
+    });
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [ob$]);
+
+  return state;
+}
+
+export function useBehaviorState<T = any>(ob$: BehaviorSubject<T>): T {
+  const [state, setState] = useState(() => {
+    return ob$.value;
   });
 
   useEffect(() => {

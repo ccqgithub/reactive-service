@@ -1,3 +1,4 @@
+import { BehaviorSubject } from 'rxjs';
 import { forwardRef } from 'react';
 import { InjectionProvide } from '@reactive-service/core';
 import { InjectionProvider } from '@reactive-service/core';
@@ -24,11 +25,13 @@ export declare type ServiceInjectorProps = {
     children: React_2.ReactNode;
 };
 
+export declare function useBehaviorState<T = any>(ob$: BehaviorSubject<T>): T;
+
 export declare function useGetService(): GetService;
 
-export declare function useObservable<T = any>(ob$: Observable<T>, defaultValue?: T): T;
-
 export declare function useObservableError<T = any>(ob$: Observable<T>, onlyAfter?: boolean): any;
+
+export declare function useObservableState<T = any>(ob$: Observable<T>, defaultValue?: T): T;
 
 export declare const useService: <P extends InjectionProvide>(provide: P) => InjectionValue<P>;
 

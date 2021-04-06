@@ -1806,11 +1806,25 @@ function useServices(provides) {
     const getService = useGetService();
     return provides.map((provide) => getService(provide));
 }
-function useObservable(ob$, defaultValue) {
+function useObservableState(ob$, defaultValue) {
     const [state, setState] = useState(() => {
         if (ob$ instanceof BehaviorSubject)
             return ob$.value;
         return defaultValue;
+    });
+    useEffect(() => {
+        const subscription = ob$.subscribe({
+            next: (v) => setState(v)
+        });
+        return () => {
+            subscription.unsubscribe();
+        };
+    }, [ob$]);
+    return state;
+}
+function useBehaviorState(ob$) {
+    const [state, setState] = useState(() => {
+        return ob$.value;
     });
     useEffect(() => {
         const subscription = ob$.subscribe({
@@ -1842,4 +1856,4 @@ function useObservableError(ob$, onlyAfter = false) {
     return error;
 }
 
-export { Disposable, Inject, InjectionToken, Injector, Service, ServiceConsumer, ServiceInjector, config, debug, empty, useGetService, useObservable, useObservableError, useService, useServices, withInjector };
+export { Disposable, Inject, InjectionToken, Injector, Service, ServiceConsumer, ServiceInjector, config, debug, empty, useBehaviorState, useGetService, useObservableError, useObservableState, useService, useServices, withInjector };
