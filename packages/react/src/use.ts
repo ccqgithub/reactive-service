@@ -1,13 +1,13 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { Subject, BehaviorSubject, Observable } from 'rxjs';
-import { InjectionProvide } from '@reactive-service/core';
+import { InjectionProvide, InjectionValue } from '@reactive-service/core';
 import { InjectorContext } from './context';
 import { GetService } from './types';
 
 export function useGetService(): GetService {
   const provider = useContext(InjectorContext);
-  const getService: GetService = useCallback(
-    (provide) => {
+  const getService = useCallback(
+    <P extends InjectionProvide>(provide: P): InjectionValue<P> | null => {
       return provider.get(provide);
     },
     [provider]
@@ -15,7 +15,9 @@ export function useGetService(): GetService {
   return getService;
 }
 
-export const useService: GetService = (provide) => {
+export const useService = <P extends InjectionProvide>(
+  provide: P
+): InjectionValue<P> => {
   const getService = useGetService();
   return getService(provide);
 };
@@ -28,7 +30,7 @@ export function useServices(provides: InjectionProvide[]): any[] {
 export function useObservable<T = any>(
   ob$: Observable<T>,
   defaultValue?: T
-): any {
+): T {
   const [state, setState] = useState(() => {
     if (ob$ instanceof BehaviorSubject) return ob$.value;
     return defaultValue;

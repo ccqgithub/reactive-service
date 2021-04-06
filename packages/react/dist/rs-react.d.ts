@@ -26,11 +26,11 @@ export declare type ServiceInjectorProps = {
 
 export declare function useGetService(): GetService;
 
-export declare function useObservable<T = any>(ob$: Observable<T>, defaultValue?: T): any;
+export declare function useObservable<T = any>(ob$: Observable<T>, defaultValue?: T): T;
 
 export declare function useObservableError<T = any>(ob$: Observable<T>, onlyAfter?: boolean): any;
 
-export declare const useService: GetService;
+export declare const useService: <P extends InjectionProvide>(provide: P) => InjectionValue<P>;
 
 export declare function useServices(provides: InjectionProvide[]): any[];
 
