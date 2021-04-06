@@ -60,7 +60,7 @@ export declare class InjectionToken<V = any> {
     toString(): string;
 }
 
-export declare type InjectionValue<P extends InjectionProvide> = P extends InjectionToken<infer V> ? V : InstanceType<InjectionConstructor>;
+export declare type InjectionValue<P extends InjectionProvide> = P extends InjectionToken<infer V> ? V : P extends InjectionConstructor ? InstanceType<P> : never;
 
 export declare class Injector {
     private parent;

@@ -10,7 +10,11 @@ export type InjectionProvide = InjectionToken | InjectionConstructor;
 
 export type InjectionValue<
   P extends InjectionProvide
-> = P extends InjectionToken<infer V> ? V : InstanceType<InjectionConstructor>;
+> = P extends InjectionToken<infer V>
+  ? V
+  : P extends InjectionConstructor
+  ? InstanceType<P>
+  : never;
 
 export type InjectionDisposer = <P extends InjectionProvide = InjectionProvide>(
   service: InjectionValue<P>
