@@ -1,10 +1,10 @@
 import { BehaviorSubject, Observable, Subject, PartialObserver } from 'rxjs';
 import Disposable from './disposable';
-import { debug, empty } from './util';
+import { debug } from './util';
 import { InjectionClass } from './types';
 
 export type ServiceSources<S extends Record<string, any>> = {
-  [P in keyof S]: BehaviorSubject<S[P]> | Subject<S[P]>;
+  [P in keyof S]: BehaviorSubject<S[P]>;
 };
 export type ServiceActions<A extends Record<string, any>> = {
   [P in keyof A]: Subject<A[P]>;
@@ -89,11 +89,7 @@ export default class Service<
     // init state
     const initialState = (args.state || {}) as S;
     (Object.keys(initialState) as (keyof S)[]).forEach((key) => {
-      if (initialState[key] === undefined || initialState[key] === empty) {
-        this.$$[key] = new Subject<S[typeof key]>();
-      } else {
-        this.$$[key] = new BehaviorSubject<S[typeof key]>(initialState[key]);
-      }
+      this.$$[key] = new BehaviorSubject<S[typeof key]>(initialState[key]);
     });
     // init actions
     const actions = args.actions || [];

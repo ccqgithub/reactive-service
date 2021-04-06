@@ -98,7 +98,7 @@ declare type ServiceOptions<S extends Record<string, any>, A extends Record<stri
 };
 
 declare type ServiceSources<S extends Record<string, any>> = {
-    [P in keyof S]: BehaviorSubject<S[P]> | Subject<S[P]>;
+    [P in keyof S]: BehaviorSubject<S[P]>;
 };
 
 export { }

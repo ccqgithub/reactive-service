@@ -1,4 +1,4 @@
-import { Subject, BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Subject } from 'rxjs';
 import React, { createContext, useContext, forwardRef, useCallback, useState, useEffect, useMemo } from 'react';
 
 var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
@@ -1410,12 +1410,7 @@ class Service extends Disposable {
         // init state
         const initialState = (args.state || {});
         Object.keys(initialState).forEach((key) => {
-            if (initialState[key] === undefined || initialState[key] === empty) {
-                this.$$[key] = new Subject();
-            }
-            else {
-                this.$$[key] = new BehaviorSubject(initialState[key]);
-            }
+            this.$$[key] = new BehaviorSubject(initialState[key]);
         });
         // init actions
         const actions = args.actions || [];

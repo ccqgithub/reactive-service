@@ -274,12 +274,7 @@ class Service extends Disposable {
         // init state
         const initialState = (args.state || {});
         Object.keys(initialState).forEach((key) => {
-            if (initialState[key] === undefined || initialState[key] === empty) {
-                this.$$[key] = new rxjs.Subject();
-            }
-            else {
-                this.$$[key] = new rxjs.BehaviorSubject(initialState[key]);
-            }
+            this.$$[key] = new rxjs.BehaviorSubject(initialState[key]);
         });
         // init actions
         const actions = args.actions || [];

@@ -1,4 +1,4 @@
-import { Subject, BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Subject } from 'rxjs';
 
 const configSettings = {
     logLevel: 'info' ,
@@ -1615,12 +1615,7 @@ class Service extends Disposable {
         // init state
         const initialState = (args.state || {});
         Object.keys(initialState).forEach((key) => {
-            if (initialState[key] === undefined || initialState[key] === empty) {
-                this.$$[key] = new Subject();
-            }
-            else {
-                this.$$[key] = new BehaviorSubject(initialState[key]);
-            }
+            this.$$[key] = new BehaviorSubject(initialState[key]);
         });
         // init actions
         const actions = args.actions || [];
