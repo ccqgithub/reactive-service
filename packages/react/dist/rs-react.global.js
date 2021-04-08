@@ -1791,7 +1791,7 @@ var RSReact = (function (exports, rxjs, React) {
 	    };
 	};
 
-	const { skip } = rxjs__default.operators;
+	rxjs__default.operators;
 
 	function useGetService() {
 	    const provider = React.useContext(InjectorContext);
@@ -1807,33 +1807,6 @@ var RSReact = (function (exports, rxjs, React) {
 	function useServices(provides) {
 	    const getService = useGetService();
 	    return provides.map((provide) => getService(provide));
-	}
-	function useObservableChange(ob$, callback) {
-	    React.useEffect(() => {
-	        const subscription = ob$.subscribe({
-	            next: (v) => callback(v)
-	        });
-	        return () => {
-	            subscription.unsubscribe();
-	        };
-	    }, [ob$]);
-	}
-	function useBehaviorChange(ob$, callback) {
-	    if (ob$ instanceof rxjs.BehaviorSubject) {
-	        ob$ = ob$.pipe(skip(1));
-	    }
-	    else {
-	        debug(ob$, 'warn');
-	        debug(`Yout are use useBehaviorChange on a observable that is not BehaviorSubject!`, 'warn');
-	    }
-	    React.useEffect(() => {
-	        const subscription = ob$.subscribe({
-	            next: (v) => callback(v)
-	        });
-	        return () => {
-	            subscription.unsubscribe();
-	        };
-	    }, [ob$]);
 	}
 	function useObservableState(ob$, defaultValue) {
 	    const [state, setState] = React.useState(() => {
@@ -1895,10 +1868,8 @@ var RSReact = (function (exports, rxjs, React) {
 	exports.config = config;
 	exports.debug = debug;
 	exports.empty = empty;
-	exports.useBehaviorChange = useBehaviorChange;
 	exports.useBehaviorState = useBehaviorState;
 	exports.useGetService = useGetService;
-	exports.useObservableChange = useObservableChange;
 	exports.useObservableError = useObservableError;
 	exports.useObservableState = useObservableState;
 	exports.useService = useService;

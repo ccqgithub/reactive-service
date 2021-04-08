@@ -1,7 +1,18 @@
-import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from 'react';
 import { Subject, BehaviorSubject, Observable } from 'rxjs';
 import { skip } from 'rxjs/operators';
-import { debug, InjectionProvide, InjectionValue } from '@reactive-service/core';
+import {
+  debug,
+  InjectionProvide,
+  InjectionValue
+} from '@reactive-service/core';
 import { InjectorContext } from './context';
 import { GetService } from './types';
 
@@ -32,9 +43,12 @@ export function useObservableChange<T = any>(
   ob$: Observable<T>,
   callback: (v: T) => void
 ): void {
+  const callbackRef = useRef(callback);
+  callbackRef.current = callback;
+
   useEffect(() => {
     const subscription = ob$.subscribe({
-      next: (v) => callback(v)
+      next: (v) => callbackRef.current(v)
     });
     return () => {
       subscription.unsubscribe();
@@ -50,12 +64,18 @@ export function useBehaviorChange<T = any>(
     ob$ = ob$.pipe(skip(1));
   } else {
     debug(ob$, 'warn');
-    debug(`Yout are use useBehaviorChange on a observable that is not BehaviorSubject!`, 'warn');
+    debug(
+      `Yout are use useBehaviorChange on a observable that is not BehaviorSubject!`,
+      'warn'
+    );
   }
+
+  const callbackRef = useRef(callback);
+  callbackRef.current = callback;
 
   useEffect(() => {
     const subscription = ob$.subscribe({
-      next: (v) => callback(v)
+      next: (v) => callbackRef.current(v)
     });
     return () => {
       subscription.unsubscribe();
