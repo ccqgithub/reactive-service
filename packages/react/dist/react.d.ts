@@ -25,9 +25,13 @@ export declare type ServiceInjectorProps = {
     children: React_2.ReactNode;
 };
 
+export declare function useBehaviorChange<T = any>(ob$: Observable<T>, callback: (v: T) => void): void;
+
 export declare function useBehaviorState<T = any>(ob$: BehaviorSubject<T>): T;
 
 export declare function useGetService(): GetService;
+
+export declare function useObservableChange<T = any>(ob$: Observable<T>, callback: (v: T) => void): void;
 
 export declare function useObservableError<T = any>(ob$: Observable<T>, onlyAfter?: boolean): any;
 

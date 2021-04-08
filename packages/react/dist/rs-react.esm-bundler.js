@@ -1,9 +1,9 @@
 import { Injector, debug } from '@reactive-service/core';
 export * from '@reactive-service/core';
-import React, { createContext, useContext, forwardRef, useCallback, useState, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, forwardRef, useCallback, useRef, useEffect, useState, useMemo } from 'react';
 import hoistStatics from 'hoist-non-react-statics';
 import { BehaviorSubject, Subject } from 'rxjs';
-import 'rxjs/operators';
+import { skip } from 'rxjs/operators';
 
 const InjectorContext = createContext(new Injector());
 const ServiceInjector = (props) => {
@@ -61,6 +61,37 @@ function useServices(provides) {
     const getService = useGetService();
     return provides.map((provide) => getService(provide));
 }
+function useObservableChange(ob$, callback) {
+    const callbackRef = useRef(callback);
+    callbackRef.current = callback;
+    useEffect(() => {
+        const subscription = ob$.subscribe({
+            next: (v) => callbackRef.current(v)
+        });
+        return () => {
+            subscription.unsubscribe();
+        };
+    }, [ob$]);
+}
+function useBehaviorChange(ob$, callback) {
+    if (ob$ instanceof BehaviorSubject) {
+        ob$ = ob$.pipe(skip(1));
+    }
+    else {
+        debug(ob$, 'warn');
+        debug(`Yout are use useBehaviorChange on a observable that is not BehaviorSubject!`, 'warn');
+    }
+    const callbackRef = useRef(callback);
+    callbackRef.current = callback;
+    useEffect(() => {
+        const subscription = ob$.subscribe({
+            next: (v) => callbackRef.current(v)
+        });
+        return () => {
+            subscription.unsubscribe();
+        };
+    }, [ob$]);
+}
 function useObservableState(ob$, defaultValue) {
     const [state, setState] = useState(() => {
         if (ob$ instanceof BehaviorSubject)
@@ -111,4 +142,4 @@ function useObservableError(ob$, onlyAfter = false) {
     return error;
 }
 
-export { ServiceConsumer, ServiceInjector, useBehaviorState, useGetService, useObservableError, useObservableState, useService, useServices, withInjector };
+export { ServiceConsumer, ServiceInjector, useBehaviorChange, useBehaviorState, useGetService, useObservableChange, useObservableError, useObservableState, useService, useServices, withInjector };
