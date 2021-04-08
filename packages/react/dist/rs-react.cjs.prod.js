@@ -6,6 +6,7 @@ var core = require('@reactive-service/core');
 var React = require('react');
 var hoistStatics = require('hoist-non-react-statics');
 var rxjs = require('rxjs');
+var operators = require('rxjs/operators');
 
 function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e['default'] : e; }
 
@@ -68,6 +69,33 @@ function useServices(provides) {
     const getService = useGetService();
     return provides.map((provide) => getService(provide));
 }
+function useObservableChange(ob$, callback) {
+    React.useEffect(() => {
+        const subscription = ob$.subscribe({
+            next: (v) => callback(v)
+        });
+        return () => {
+            subscription.unsubscribe();
+        };
+    }, [ob$]);
+}
+function useBehaviorChange(ob$, callback) {
+    if (ob$ instanceof rxjs.BehaviorSubject) {
+        ob$ = ob$.pipe(operators.skip(1));
+    }
+    else {
+        core.debug(ob$, 'warn');
+        core.debug(`Yout are use useBehaviorChange on a observable that is not BehaviorSubject!`, 'warn');
+    }
+    React.useEffect(() => {
+        const subscription = ob$.subscribe({
+            next: (v) => callback(v)
+        });
+        return () => {
+            subscription.unsubscribe();
+        };
+    }, [ob$]);
+}
 function useObservableState(ob$, defaultValue) {
     const [state, setState] = React.useState(() => {
         if (ob$ instanceof rxjs.BehaviorSubject)
@@ -120,8 +148,10 @@ function useObservableError(ob$, onlyAfter = false) {
 
 exports.ServiceConsumer = ServiceConsumer;
 exports.ServiceInjector = ServiceInjector;
+exports.useBehaviorChange = useBehaviorChange;
 exports.useBehaviorState = useBehaviorState;
 exports.useGetService = useGetService;
+exports.useObservableChange = useObservableChange;
 exports.useObservableError = useObservableError;
 exports.useObservableState = useObservableState;
 exports.useService = useService;

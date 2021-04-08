@@ -3,6 +3,7 @@ var RSReact = (function (exports, rxjs, React) {
 
 	function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e['default'] : e; }
 
+	var rxjs__default = /*#__PURE__*/_interopDefaultLegacy(rxjs);
 	var React__default = /*#__PURE__*/_interopDefaultLegacy(React);
 
 	var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
@@ -1460,28 +1461,6 @@ var RSReact = (function (exports, rxjs, React) {
 	    }
 	}
 
-	const InjectorContext = React.createContext(new Injector());
-	const ServiceInjector = (props) => {
-	    const parentInjector = React.useContext(InjectorContext);
-	    const { providers = [], children } = props;
-	    const injector = new Injector(providers, parentInjector);
-	    return (React__default.createElement(InjectorContext.Provider, { value: injector }, children));
-	};
-	const ServiceConsumer = (props) => {
-	    const injector = React.useContext(InjectorContext);
-	    const getService = (provide, opts = {}) => {
-	        const { optional = false } = opts;
-	        const service = injector.get(provide);
-	        if (!service && !optional) {
-	            debug(provide, 'error');
-	            throw new Error(`Can not find the service, you provide it?`);
-	        }
-	    };
-	    return typeof props.children === 'function'
-	        ? props.children({ getService })
-	        : props.children;
-	};
-
 	/** @license React v16.13.1
 	 * react-is.development.js
 	 *
@@ -1771,6 +1750,28 @@ var RSReact = (function (exports, rxjs, React) {
 
 	var hoistNonReactStatics_cjs = hoistNonReactStatics;
 
+	const InjectorContext = React.createContext(new Injector());
+	const ServiceInjector = (props) => {
+	    const parentInjector = React.useContext(InjectorContext);
+	    const { providers = [], children } = props;
+	    const injector = new Injector(providers, parentInjector);
+	    return (React__default.createElement(InjectorContext.Provider, { value: injector }, children));
+	};
+	const ServiceConsumer = (props) => {
+	    const injector = React.useContext(InjectorContext);
+	    const getService = (provide, opts = {}) => {
+	        const { optional = false } = opts;
+	        const service = injector.get(provide);
+	        if (!service && !optional) {
+	            debug(provide, 'error');
+	            throw new Error(`Can not find the service, you provide it?`);
+	        }
+	    };
+	    return typeof props.children === 'function'
+	        ? props.children({ getService })
+	        : props.children;
+	};
+
 	/*
 	一般测试，或者封装路由组件列表时使用，因为路由列表时显式添加provider不太方便
 	const WrrappedComponent = () => {};
@@ -1790,6 +1791,8 @@ var RSReact = (function (exports, rxjs, React) {
 	    };
 	};
 
+	const { skip } = rxjs__default.operators;
+
 	function useGetService() {
 	    const provider = React.useContext(InjectorContext);
 	    const getService = React.useCallback((provide) => {
@@ -1804,6 +1807,33 @@ var RSReact = (function (exports, rxjs, React) {
 	function useServices(provides) {
 	    const getService = useGetService();
 	    return provides.map((provide) => getService(provide));
+	}
+	function useObservableChange(ob$, callback) {
+	    React.useEffect(() => {
+	        const subscription = ob$.subscribe({
+	            next: (v) => callback(v)
+	        });
+	        return () => {
+	            subscription.unsubscribe();
+	        };
+	    }, [ob$]);
+	}
+	function useBehaviorChange(ob$, callback) {
+	    if (ob$ instanceof rxjs.BehaviorSubject) {
+	        ob$ = ob$.pipe(skip(1));
+	    }
+	    else {
+	        debug(ob$, 'warn');
+	        debug(`Yout are use useBehaviorChange on a observable that is not BehaviorSubject!`, 'warn');
+	    }
+	    React.useEffect(() => {
+	        const subscription = ob$.subscribe({
+	            next: (v) => callback(v)
+	        });
+	        return () => {
+	            subscription.unsubscribe();
+	        };
+	    }, [ob$]);
 	}
 	function useObservableState(ob$, defaultValue) {
 	    const [state, setState] = React.useState(() => {
@@ -1865,8 +1895,10 @@ var RSReact = (function (exports, rxjs, React) {
 	exports.config = config;
 	exports.debug = debug;
 	exports.empty = empty;
+	exports.useBehaviorChange = useBehaviorChange;
 	exports.useBehaviorState = useBehaviorState;
 	exports.useGetService = useGetService;
+	exports.useObservableChange = useObservableChange;
 	exports.useObservableError = useObservableError;
 	exports.useObservableState = useObservableState;
 	exports.useService = useService;

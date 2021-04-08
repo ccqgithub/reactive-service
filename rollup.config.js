@@ -2,6 +2,7 @@ import path from 'path';
 import ts from 'rollup-plugin-typescript2';
 import replace from '@rollup/plugin-replace';
 import json from '@rollup/plugin-json';
+import virtual from '@rollup/plugin-virtual';
 
 if (!process.env.TARGET) {
   throw new Error('TARGET package must be specified via --environment flag.');
@@ -81,6 +82,7 @@ function createConfig(format, output, plugins = []) {
   const isNodeBuild = format === 'cjs';
   const isGlobalBuild = /global/.test(format);
 
+  let virtualPlugin = [];
   if (isGlobalBuild) {
     output.name = packageOptions.name;
     output.globals = {
@@ -88,6 +90,16 @@ function createConfig(format, output, plugins = []) {
       'rxjs': 'rxjs',
       'react': 'React'
     };
+    virtualPlugin = [
+      virtual({
+        'rxjs/operators': 
+        `
+           import rxjs from 'rxjs'; 
+           const { skip } = rxjs.operators;
+           export { skip };
+        `
+      })
+    ]
   }
 
   // should generate .d.ts files
@@ -118,7 +130,7 @@ function createConfig(format, output, plugins = []) {
         [
           ...Object.keys(pkg.dependencies || {}),
           ...Object.keys(pkg.peerDependencies || {}),
-          ...['path', 'url', 'stream']
+          ...['path', 'url', 'stream', 'rxjs/operators']
         ];
 
   const nodePlugins =
@@ -138,6 +150,7 @@ function createConfig(format, output, plugins = []) {
     // used alone.
     external,
     plugins: [
+      ...virtualPlugin,
       json({
         namedExports: false
       }),

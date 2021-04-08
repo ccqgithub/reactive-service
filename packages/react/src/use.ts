@@ -1,6 +1,7 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { Subject, BehaviorSubject, Observable } from 'rxjs';
-import { InjectionProvide, InjectionValue } from '@reactive-service/core';
+import { skip } from 'rxjs/operators';
+import { debug, InjectionProvide, InjectionValue } from '@reactive-service/core';
 import { InjectorContext } from './context';
 import { GetService } from './types';
 
@@ -25,6 +26,41 @@ export const useService = <P extends InjectionProvide>(
 export function useServices(provides: InjectionProvide[]): any[] {
   const getService = useGetService();
   return provides.map((provide) => getService(provide));
+}
+
+export function useObservableChange<T = any>(
+  ob$: Observable<T>,
+  callback: (v: T) => void
+): void {
+  useEffect(() => {
+    const subscription = ob$.subscribe({
+      next: (v) => callback(v)
+    });
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [ob$]);
+}
+
+export function useBehaviorChange<T = any>(
+  ob$: Observable<T>,
+  callback: (v: T) => void
+): void {
+  if (ob$ instanceof BehaviorSubject) {
+    ob$ = ob$.pipe(skip(1));
+  } else {
+    debug(ob$, 'warn');
+    debug(`Yout are use useBehaviorChange on a observable that is not BehaviorSubject!`, 'warn');
+  }
+
+  useEffect(() => {
+    const subscription = ob$.subscribe({
+      next: (v) => callback(v)
+    });
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [ob$]);
 }
 
 export function useObservableState<T = any>(
