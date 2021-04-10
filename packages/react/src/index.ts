@@ -10,6 +10,5 @@ export {
   useGetService,
   useListener,
   useObservableError,
-  useObservableRef,
-  useServiceRef
+  useObservableRef
 } from './use';

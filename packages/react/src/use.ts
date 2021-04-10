@@ -2,11 +2,11 @@ import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { Subject, BehaviorSubject, Observable } from 'rxjs';
 import { InjectionProvide, InjectionValue } from '@reactive-service/core';
 import { InjectorContext } from './context';
-import { GetService, RRefObject } from './types';
+import { GetService, RSRefObject } from './types';
 
-export function useRSRef<T = any>(value: T): RRefObject<T> {
+export function useRSRef<T = any>(value: T): RSRefObject<T> {
   const [state, setState] = useState(value);
-  const resRef: RRefObject = {
+  const resRef: RSRefObject = {
     get value() {
       return state;
     },
@@ -17,10 +17,10 @@ export function useRSRef<T = any>(value: T): RRefObject<T> {
   return resRef;
 }
 
-export function useRSValueRef<T = any>(value: T): RRefObject<T> {
+export function useRSValueRef<T = any>(value: T): RSRefObject<T> {
   const ref = useRef(value);
   ref.current = value;
-  const resRef: RRefObject = {
+  const resRef: RSRefObject = {
     get value() {
       return ref.current;
     },
@@ -44,25 +44,20 @@ export function useGetService(): GetService {
 
 export function useService<P extends InjectionProvide>(
   provide: P
-): InjectionValue<P> {
+): [InjectionValue<P>, RSRefObject<InjectionValue<P>>] {
   const getService = useGetService();
-  return getService(provide);
-}
+  const service = getService(provide);
+  const ref = useRSValueRef(service);
 
-export function useServiceRef<P extends InjectionProvide>(
-  provide: P
-): RRefObject<InjectionValue<P>> {
-  const service = useService(provide);
-  const resRef = useRSValueRef(service);
-  return resRef;
+  return [service, ref];
 }
 
 export function useObservableRef<T = any>(
   ob$: Observable<T>,
   defaultValue: T
-): RRefObject<T> {
+): RSRefObject<T> {
   const ref = useRSRef(defaultValue);
-  const resRef: RRefObject<T> = {
+  const resRef: RSRefObject<T> = {
     get value() {
       return ref.value;
     },
@@ -85,13 +80,13 @@ export function useObservableRef<T = any>(
 
 export function useBehaviorRef<T = any>(
   ob$: BehaviorSubject<T>
-): RRefObject<T> {
+): RSRefObject<T> {
   if (!(ob$ instanceof BehaviorSubject)) {
     throw new Error(`The useBehaviorState can only use with BehaviorSubject!`);
   }
 
   const ref = useRSRef(ob$.value);
-  const resRef: RRefObject<T> = {
+  const resRef: RSRefObject<T> = {
     get value() {
       return ref.value;
     },
@@ -117,7 +112,7 @@ export function useObservableError<T = any>(
   onlyAfter = false
 ): any {
   const ref = useRSRef(null);
-  const resRef: RRefObject<T | null> = {
+  const resRef: RSRefObject<T | null> = {
     get value() {
       return ref.value;
     },
@@ -142,10 +137,7 @@ export function useObservableError<T = any>(
   return resRef;
 }
 
-export function useListener<T = any>(
-  value: T,
-  listner: (arg: T) => void
-): void {
+export function useListen<T = any>(value: T, listner: (arg: T) => void): void {
   const ref = useRef(listner);
   ref.current = listner;
 

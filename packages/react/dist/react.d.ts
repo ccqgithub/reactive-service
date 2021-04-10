@@ -10,7 +10,7 @@ export declare type GetService<P extends InjectionProvide = InjectionProvide> = 
     optional?: boolean;
 }) => InjectionValue<P>;
 
-export declare type RRefObject<T = any> = {
+export declare type RSRefObject<T = any> = {
     value: T;
 };
 
@@ -29,7 +29,7 @@ export declare type ServiceInjectorProps = {
     children: React_2.ReactNode;
 };
 
-export declare function useBehaviorRef<T = any>(ob$: BehaviorSubject<T>): RRefObject<T>;
+export declare function useBehaviorRef<T = any>(ob$: BehaviorSubject<T>): RSRefObject<T>;
 
 export declare function useGetService(): GetService;
 
@@ -37,15 +37,13 @@ export declare function useListener<T = any>(value: T, listner: (arg: T) => void
 
 export declare function useObservableError<T = any>(ob$: Observable<T>, onlyAfter?: boolean): any;
 
-export declare function useObservableRef<T = any>(ob$: Observable<T>, defaultValue: T): RRefObject<T>;
+export declare function useObservableRef<T = any>(ob$: Observable<T>, defaultValue: T): RSRefObject<T>;
 
-export declare function useRSRef<T = any>(value: T): RRefObject<T>;
+export declare function useRSRef<T = any>(value: T): RSRefObject<T>;
 
-export declare function useRSValueRef<T = any>(value: T): RRefObject<T>;
+export declare function useRSValueRef<T = any>(value: T): RSRefObject<T>;
 
-export declare function useService<P extends InjectionProvide>(provide: P): InjectionValue<P>;
-
-export declare function useServiceRef<P extends InjectionProvide>(provide: P): RRefObject<InjectionValue<P>>;
+export declare function useService<P extends InjectionProvide>(provide: P): [InjectionValue<P>, RSRefObject<InjectionValue<P>>];
 
 export declare const withInjector: (args: {
     providers: InjectionProvider[];

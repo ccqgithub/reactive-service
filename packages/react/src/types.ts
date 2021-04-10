@@ -21,6 +21,6 @@ export type ServiceConsumerProps = {
     | React.ReactNode;
 };
 
-export type RRefObject<T = any> = {
+export type RSRefObject<T = any> = {
   value: T;
 };

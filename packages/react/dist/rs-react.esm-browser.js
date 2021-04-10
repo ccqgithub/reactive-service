@@ -1820,12 +1820,9 @@ function useGetService() {
 }
 function useService(provide) {
     const getService = useGetService();
-    return getService(provide);
-}
-function useServiceRef(provide) {
-    const service = useService(provide);
-    const resRef = useRSValueRef(service);
-    return resRef;
+    const service = getService(provide);
+    const ref = useRSValueRef(service);
+    return [service, ref];
 }
 function useObservableRef(ob$, defaultValue) {
     const ref = useRSRef(defaultValue);
@@ -1903,4 +1900,4 @@ function useListener(value, listner) {
     }, [value]);
 }
 
-export { Disposable, Inject, InjectionToken, Injector, Service, ServiceConsumer, ServiceInjector, config, debug, empty, useBehaviorRef, useGetService, useListener, useObservableError, useObservableRef, useRSRef, useRSValueRef, useService, useServiceRef, withInjector };
+export { Disposable, Inject, InjectionToken, Injector, Service, ServiceConsumer, ServiceInjector, config, debug, empty, useBehaviorRef, useGetService, useListener, useObservableError, useObservableRef, useRSRef, useRSValueRef, useService, withInjector };

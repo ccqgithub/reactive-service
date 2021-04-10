@@ -1824,12 +1824,9 @@ var RSReact = (function (exports, rxjs, React) {
 	}
 	function useService(provide) {
 	    const getService = useGetService();
-	    return getService(provide);
-	}
-	function useServiceRef(provide) {
-	    const service = useService(provide);
-	    const resRef = useRSValueRef(service);
-	    return resRef;
+	    const service = getService(provide);
+	    const ref = useRSValueRef(service);
+	    return [service, ref];
 	}
 	function useObservableRef(ob$, defaultValue) {
 	    const ref = useRSRef(defaultValue);
@@ -1925,7 +1922,6 @@ var RSReact = (function (exports, rxjs, React) {
 	exports.useRSRef = useRSRef;
 	exports.useRSValueRef = useRSValueRef;
 	exports.useService = useService;
-	exports.useServiceRef = useServiceRef;
 	exports.withInjector = withInjector;
 
 	Object.defineProperty(exports, '__esModule', { value: true });

@@ -87,12 +87,9 @@ function useGetService() {
 }
 function useService(provide) {
     const getService = useGetService();
-    return getService(provide);
-}
-function useServiceRef(provide) {
-    const service = useService(provide);
-    const resRef = useRSValueRef(service);
-    return resRef;
+    const service = getService(provide);
+    const ref = useRSValueRef(service);
+    return [service, ref];
 }
 function useObservableRef(ob$, defaultValue) {
     const ref = useRSRef(defaultValue);
@@ -180,7 +177,6 @@ exports.useObservableRef = useObservableRef;
 exports.useRSRef = useRSRef;
 exports.useRSValueRef = useRSValueRef;
 exports.useService = useService;
-exports.useServiceRef = useServiceRef;
 exports.withInjector = withInjector;
 Object.keys(core).forEach(function (k) {
   if (k !== 'default' && !exports.hasOwnProperty(k)) exports[k] = core[k];
