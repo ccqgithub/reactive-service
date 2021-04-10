@@ -1,6 +1,6 @@
 {
   "name": "@reactive-service/react",
-  "version": "0.0.11",
+  "version": "0.0.13",
   "description": "a service tool for react with rxjs",
   "main": "index.js",
   "module": "dist/rs-react.esm-bundler.js",

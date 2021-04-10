@@ -1,20 +1,35 @@
-import {
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState
-} from 'react';
+import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { Subject, BehaviorSubject, Observable } from 'rxjs';
-import { skip } from 'rxjs/operators';
-import {
-  debug,
-  InjectionProvide,
-  InjectionValue
-} from '@reactive-service/core';
+import { InjectionProvide, InjectionValue } from '@reactive-service/core';
 import { InjectorContext } from './context';
-import { GetService } from './types';
+import { GetService, RRefObject } from './types';
+
+export function useRSRef<T = any>(value: T): RRefObject<T> {
+  const [state, setState] = useState(value);
+  const resRef: RRefObject = {
+    get value() {
+      return state;
+    },
+    set value(v) {
+      setState(v);
+    }
+  };
+  return resRef;
+}
+
+export function useRSValueRef<T = any>(value: T): RRefObject<T> {
+  const ref = useRef(value);
+  ref.current = value;
+  const resRef: RRefObject = {
+    get value() {
+      return ref.current;
+    },
+    set value(v) {
+      throw new Error(`Can not set value to this ref of useRSWatchRef!`);
+    }
+  };
+  return resRef;
+}
 
 export function useGetService(): GetService {
   const provider = useContext(InjectorContext);
@@ -27,120 +42,114 @@ export function useGetService(): GetService {
   return getService;
 }
 
-export const useService = <P extends InjectionProvide>(
+export function useService<P extends InjectionProvide>(
   provide: P
-): InjectionValue<P> => {
+): InjectionValue<P> {
   const getService = useGetService();
   return getService(provide);
-};
-
-export function useServices(provides: InjectionProvide[]): any[] {
-  const getService = useGetService();
-  return provides.map((provide) => getService(provide));
 }
 
-export function useObservableChange<T = any>(
+export function useServiceRef<P extends InjectionProvide>(
+  provide: P
+): RRefObject<InjectionValue<P>> {
+  const service = useService(provide);
+  const resRef = useRSValueRef(service);
+  return resRef;
+}
+
+export function useObservableRef<T = any>(
   ob$: Observable<T>,
-  callback: (v: T) => void
-): void {
-  const callbackRef = useRef(callback);
-  callbackRef.current = callback;
+  defaultValue: T
+): RRefObject<T> {
+  const ref = useRSRef(defaultValue);
+  const resRef: RRefObject<T> = {
+    get value() {
+      return ref.value;
+    },
+    set value(v) {
+      throw new Error(`Can not set value to this ref of useObservableRef!`);
+    }
+  };
 
   useEffect(() => {
     const subscription = ob$.subscribe({
-      next: (v) => callbackRef.current(v)
+      next: (v) => (ref.value = v)
     });
     return () => {
       subscription.unsubscribe();
     };
-  }, [ob$]);
+  }, [ob$, ref]);
+
+  return resRef;
 }
 
-export function useBehaviorChange<T = any>(
-  ob$: Observable<T>,
-  callback: (v: T) => void
-): void {
-  if (ob$ instanceof BehaviorSubject) {
-    ob$ = ob$.pipe(skip(1));
-  } else {
-    debug(ob$, 'warn');
-    debug(
-      `Yout are use useBehaviorChange on a observable that is not BehaviorSubject!`,
-      'warn'
-    );
+export function useBehaviorRef<T = any>(
+  ob$: BehaviorSubject<T>
+): RRefObject<T> {
+  if (!(ob$ instanceof BehaviorSubject)) {
+    throw new Error(`The useBehaviorState can only use with BehaviorSubject!`);
   }
 
-  const callbackRef = useRef(callback);
-  callbackRef.current = callback;
+  const ref = useRSRef(ob$.value);
+  const resRef: RRefObject<T> = {
+    get value() {
+      return ref.value;
+    },
+    set value(v) {
+      throw new Error(`Can not set value to this ref of useBehaviorRef!`);
+    }
+  };
 
   useEffect(() => {
     const subscription = ob$.subscribe({
-      next: (v) => callbackRef.current(v)
+      next: (v) => (ref.value = v)
     });
     return () => {
       subscription.unsubscribe();
     };
-  }, [ob$]);
-}
+  }, [ob$, ref]);
 
-export function useObservableState<T = any>(
-  ob$: Observable<T>,
-  defaultValue?: T
-): T {
-  const [state, setState] = useState(() => {
-    if (ob$ instanceof BehaviorSubject) return ob$.value;
-    return defaultValue;
-  });
-
-  useEffect(() => {
-    const subscription = ob$.subscribe({
-      next: (v) => setState(v)
-    });
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [ob$]);
-
-  return state;
-}
-
-export function useBehaviorState<T = any>(ob$: BehaviorSubject<T>): T {
-  const [state, setState] = useState(() => {
-    return ob$.value;
-  });
-
-  useEffect(() => {
-    const subscription = ob$.subscribe({
-      next: (v) => setState(v)
-    });
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [ob$]);
-
-  return state;
+  return resRef;
 }
 
 export function useObservableError<T = any>(
   ob$: Observable<T>,
   onlyAfter = false
 ): any {
-  const [error, setError] = useState(null);
-  const ignore = useMemo(() => {
-    return ob$ instanceof Subject && onlyAfter && ob$.hasError;
-  }, [ob$, onlyAfter]);
+  const ref = useRSRef(null);
+  const resRef: RRefObject<T | null> = {
+    get value() {
+      return ref.value;
+    },
+    set value(v) {
+      throw new Error(`Can not set value to this ref of useBehaviorRef!`);
+    }
+  };
 
   useEffect(() => {
+    const ignore = ob$ instanceof Subject && onlyAfter && ob$.hasError;
     if (ignore) return;
     const subscription = ob$.subscribe({
       error: (err) => {
-        setError(err);
+        ref.value = err;
       }
     });
     return () => {
       subscription.unsubscribe();
     };
-  }, [ob$, ignore]);
+  }, [ob$, onlyAfter, ref]);
 
-  return error;
+  return resRef;
+}
+
+export function useListener<T = any>(
+  value: T,
+  listner: (arg: T) => void
+): void {
+  const ref = useRef(listner);
+  ref.current = listner;
+
+  useEffect(() => {
+    ref.current(value);
+  }, [value]);
 }

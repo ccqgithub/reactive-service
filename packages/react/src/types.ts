@@ -20,3 +20,7 @@ export type ServiceConsumerProps = {
     | ((arg: { getService: GetService }) => React.ReactNode)
     | React.ReactNode;
 };
+
+export type RRefObject<T = any> = {
+  value: T;
+};

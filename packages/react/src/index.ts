@@ -3,12 +3,13 @@ export * from './types';
 export { default as withInjector } from './with-injector';
 export { ServiceInjector, ServiceConsumer } from './context';
 export {
-  useGetService,
-  useObservableChange,
-  useBehaviorChange,
-  useObservableState,
-  useObservableError,
-  useBehaviorState,
+  useRSRef,
+  useRSValueRef,
   useService,
-  useServices
+  useBehaviorRef,
+  useGetService,
+  useListener,
+  useObservableError,
+  useObservableRef,
+  useServiceRef
 } from './use';
