@@ -137,7 +137,10 @@ export function useObservableError<T = any>(
   return resRef;
 }
 
-export function useListen<T = any>(value: T, listner: (arg: T) => void): void {
+export function useListener<T = any>(
+  value: T,
+  listner: (arg: T) => void
+): void {
   const ref = useRef(listner);
   ref.current = listner;
 
