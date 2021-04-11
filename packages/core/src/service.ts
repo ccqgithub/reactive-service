@@ -77,15 +77,6 @@ export default class Service<
   constructor(args: ServiceOptions<S, A> = {}) {
     super();
 
-    // init
-    // displayName
-    if (!this.displayName) {
-      this.displayName = this.constructor.name;
-      debug(
-        `[Service ${this.displayName}]: For better debugging, you'd better add an attribute 'displayName' to each service class.`,
-        'warn'
-      );
-    }
     // init state
     const initialState = (args.state || {}) as S;
     (Object.keys(initialState) as (keyof S)[]).forEach((key) => {
