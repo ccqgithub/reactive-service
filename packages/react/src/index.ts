@@ -4,11 +4,11 @@ export { default as withInjector } from './with-injector';
 export { ServiceInjector, ServiceConsumer } from './context';
 export {
   useRSRef,
-  useRSValueRef,
+  useValueRef,
   useService,
   useBehaviorRef,
   useGetService,
-  useListener,
+  useListenValue,
   useObservableError,
   useObservableRef
 } from './use';

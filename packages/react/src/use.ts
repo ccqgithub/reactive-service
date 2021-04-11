@@ -17,7 +17,7 @@ export function useRSRef<T = any>(value: T): RSRefObject<T> {
   return resRef;
 }
 
-export function useRSValueRef<T = any>(value: T): RSRefObject<T> {
+export function useValueRef<T = any>(value: T): RSRefObject<T> {
   const ref = useRef(value);
   ref.current = value;
   const resRef: RSRefObject = {
@@ -44,12 +44,11 @@ export function useGetService(): GetService {
 
 export function useService<P extends InjectionProvide>(
   provide: P
-): [InjectionValue<P>, RSRefObject<InjectionValue<P>>] {
+): InjectionValue<P> {
   const getService = useGetService();
   const service = getService(provide);
-  const ref = useRSValueRef(service);
 
-  return [service, ref];
+  return service;
 }
 
 export function useObservableRef<T = any>(
@@ -137,7 +136,7 @@ export function useObservableError<T = any>(
   return resRef;
 }
 
-export function useListener<T = any>(
+export function useListenValue<T = any>(
   value: T,
   listner: (arg: T) => void
 ): void {

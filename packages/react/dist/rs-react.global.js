@@ -1802,7 +1802,7 @@ var RSReact = (function (exports, rxjs, React) {
 	    };
 	    return resRef;
 	}
-	function useRSValueRef(value) {
+	function useValueRef(value) {
 	    const ref = React.useRef(value);
 	    ref.current = value;
 	    const resRef = {
@@ -1825,8 +1825,7 @@ var RSReact = (function (exports, rxjs, React) {
 	function useService(provide) {
 	    const getService = useGetService();
 	    const service = getService(provide);
-	    const ref = useRSValueRef(service);
-	    return [service, ref];
+	    return service;
 	}
 	function useObservableRef(ob$, defaultValue) {
 	    const ref = useRSRef(defaultValue);
@@ -1896,7 +1895,7 @@ var RSReact = (function (exports, rxjs, React) {
 	    }, [ob$, onlyAfter, ref]);
 	    return resRef;
 	}
-	function useListener(value, listner) {
+	function useListenValue(value, listner) {
 	    const ref = React.useRef(listner);
 	    ref.current = listner;
 	    React.useEffect(() => {
@@ -1916,12 +1915,12 @@ var RSReact = (function (exports, rxjs, React) {
 	exports.empty = empty;
 	exports.useBehaviorRef = useBehaviorRef;
 	exports.useGetService = useGetService;
-	exports.useListener = useListener;
+	exports.useListenValue = useListenValue;
 	exports.useObservableError = useObservableError;
 	exports.useObservableRef = useObservableRef;
 	exports.useRSRef = useRSRef;
-	exports.useRSValueRef = useRSValueRef;
 	exports.useService = useService;
+	exports.useValueRef = useValueRef;
 	exports.withInjector = withInjector;
 
 	Object.defineProperty(exports, '__esModule', { value: true });

@@ -1798,7 +1798,7 @@ function useRSRef(value) {
     };
     return resRef;
 }
-function useRSValueRef(value) {
+function useValueRef(value) {
     const ref = useRef(value);
     ref.current = value;
     const resRef = {
@@ -1821,8 +1821,7 @@ function useGetService() {
 function useService(provide) {
     const getService = useGetService();
     const service = getService(provide);
-    const ref = useRSValueRef(service);
-    return [service, ref];
+    return service;
 }
 function useObservableRef(ob$, defaultValue) {
     const ref = useRSRef(defaultValue);
@@ -1892,7 +1891,7 @@ function useObservableError(ob$, onlyAfter = false) {
     }, [ob$, onlyAfter, ref]);
     return resRef;
 }
-function useListener(value, listner) {
+function useListenValue(value, listner) {
     const ref = useRef(listner);
     ref.current = listner;
     useEffect(() => {
@@ -1900,4 +1899,4 @@ function useListener(value, listner) {
     }, [value]);
 }
 
-export { Disposable, Inject, InjectionToken, Injector, Service, ServiceConsumer, ServiceInjector, config, debug, empty, useBehaviorRef, useGetService, useListener, useObservableError, useObservableRef, useRSRef, useRSValueRef, useService, withInjector };
+export { Disposable, Inject, InjectionToken, Injector, Service, ServiceConsumer, ServiceInjector, config, debug, empty, useBehaviorRef, useGetService, useListenValue, useObservableError, useObservableRef, useRSRef, useService, useValueRef, withInjector };

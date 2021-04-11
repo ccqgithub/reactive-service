@@ -33,7 +33,7 @@ export declare function useBehaviorRef<T = any>(ob$: BehaviorSubject<T>): RSRefO
 
 export declare function useGetService(): GetService;
 
-export declare function useListener<T = any>(value: T, listner: (arg: T) => void): void;
+export declare function useListenValue<T = any>(value: T, listner: (arg: T) => void): void;
 
 export declare function useObservableError<T = any>(ob$: Observable<T>, onlyAfter?: boolean): any;
 
@@ -41,9 +41,9 @@ export declare function useObservableRef<T = any>(ob$: Observable<T>, defaultVal
 
 export declare function useRSRef<T = any>(value: T): RSRefObject<T>;
 
-export declare function useRSValueRef<T = any>(value: T): RSRefObject<T>;
+export declare function useService<P extends InjectionProvide>(provide: P): InjectionValue<P>;
 
-export declare function useService<P extends InjectionProvide>(provide: P): [InjectionValue<P>, RSRefObject<InjectionValue<P>>];
+export declare function useValueRef<T = any>(value: T): RSRefObject<T>;
 
 export declare const withInjector: (args: {
     providers: InjectionProvider[];
