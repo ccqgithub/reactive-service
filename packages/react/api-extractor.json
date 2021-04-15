@@ -6,6 +6,8 @@
   },
   "dtsRollup": {
     "enabled": true,
+    "untrimmedFilePath": "./dist/rs-react.all.d.ts",
+    "betaTrimmedFilePath": "./dist/rs-react.beta.d.ts",
     "publicTrimmedFilePath": "./dist/rs-react.d.ts"
   }
 }
