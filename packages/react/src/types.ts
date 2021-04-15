@@ -22,5 +22,5 @@ export type ServiceConsumerProps = {
 };
 
 export type RSRefObject<T = any> = {
-  value: T;
+  current: T;
 };

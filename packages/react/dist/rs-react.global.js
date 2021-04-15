@@ -1787,10 +1787,10 @@ var RSReact = (function (exports, rxjs, React) {
 	function useRSRef(value) {
 	    const [state, setState] = React.useState(value);
 	    const resRef = {
-	        get value() {
+	        get current() {
 	            return state;
 	        },
-	        set value(v) {
+	        set current(v) {
 	            setState(v);
 	        }
 	    };
@@ -1800,10 +1800,10 @@ var RSReact = (function (exports, rxjs, React) {
 	    const ref = React.useRef(value);
 	    ref.current = value;
 	    const resRef = {
-	        get value() {
+	        get current() {
 	            return ref.current;
 	        },
-	        set value(v) {
+	        set current(v) {
 	            throw new Error(`Can not set value to this ref of useRSWatchRef!`);
 	        }
 	    };
@@ -1821,73 +1821,49 @@ var RSReact = (function (exports, rxjs, React) {
 	    const service = getService(provide);
 	    return service;
 	}
-	function useObservableRef(ob$, defaultValue) {
-	    const ref = useRSRef(defaultValue);
-	    const resRef = {
-	        get value() {
-	            return ref.value;
-	        },
-	        set value(v) {
-	            throw new Error(`Can not set value to this ref of useObservableRef!`);
-	        }
-	    };
+	function useObservable(ob$, defaultValue) {
+	    const [state, setState] = React.useState(defaultValue);
 	    React.useEffect(() => {
 	        const subscription = ob$.subscribe({
-	            next: (v) => (ref.value = v)
+	            next: (v) => setState(v)
 	        });
 	        return () => {
 	            subscription.unsubscribe();
 	        };
-	    }, [ob$, ref]);
-	    return resRef;
+	    }, [ob$]);
+	    return state;
 	}
-	function useBehaviorRef(ob$) {
+	function useBehavior(ob$) {
 	    if (!(ob$ instanceof rxjs.BehaviorSubject)) {
 	        throw new Error(`The useBehaviorState can only use with BehaviorSubject!`);
 	    }
-	    const ref = useRSRef(ob$.value);
-	    const resRef = {
-	        get value() {
-	            return ref.value;
-	        },
-	        set value(v) {
-	            throw new Error(`Can not set value to this ref of useBehaviorRef!`);
-	        }
-	    };
+	    const [state, setState] = React.useState(ob$.value);
 	    React.useEffect(() => {
 	        const subscription = ob$.subscribe({
-	            next: (v) => (ref.value = v)
+	            next: (v) => setState(v)
 	        });
 	        return () => {
 	            subscription.unsubscribe();
 	        };
-	    }, [ob$, ref]);
-	    return resRef;
+	    }, [ob$]);
+	    return state;
 	}
 	function useObservableError(ob$, onlyAfter = false) {
-	    const ref = useRSRef(null);
-	    const resRef = {
-	        get value() {
-	            return ref.value;
-	        },
-	        set value(v) {
-	            throw new Error(`Can not set value to this ref of useBehaviorRef!`);
-	        }
-	    };
+	    const [state, setState] = React.useState(null);
 	    React.useEffect(() => {
 	        const ignore = ob$ instanceof rxjs.Subject && onlyAfter && ob$.hasError;
 	        if (ignore)
 	            return;
 	        const subscription = ob$.subscribe({
 	            error: (err) => {
-	                ref.value = err;
+	                setState(err);
 	            }
 	        });
 	        return () => {
 	            subscription.unsubscribe();
 	        };
-	    }, [ob$, onlyAfter, ref]);
-	    return resRef;
+	    }, [ob$, onlyAfter]);
+	    return state;
 	}
 	function useListenValue(value, listner) {
 	    const ref = React.useRef(listner);
@@ -1907,11 +1883,11 @@ var RSReact = (function (exports, rxjs, React) {
 	exports.config = config;
 	exports.debug = debug;
 	exports.empty = empty;
-	exports.useBehaviorRef = useBehaviorRef;
+	exports.useBehavior = useBehavior;
 	exports.useGetService = useGetService;
 	exports.useListenValue = useListenValue;
+	exports.useObservable = useObservable;
 	exports.useObservableError = useObservableError;
-	exports.useObservableRef = useObservableRef;
 	exports.useRSRef = useRSRef;
 	exports.useService = useService;
 	exports.useValueRef = useValueRef;

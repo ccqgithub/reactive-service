@@ -6,9 +6,9 @@ export {
   useRSRef,
   useValueRef,
   useService,
-  useBehaviorRef,
+  useBehavior,
   useGetService,
   useListenValue,
   useObservableError,
-  useObservableRef
+  useObservable
 } from './use';
