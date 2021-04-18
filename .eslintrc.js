@@ -29,12 +29,15 @@ module.exports = {
     'prettier/prettier': 'warn',
     '@typescript-eslint/no-explicit-any': 'off',
     '@typescript-eslint/no-empty-function': 'off',
-    '@typescript-eslint/no-var-requires': 'off'
+    '@typescript-eslint/no-var-requires': 'off',
+    '@typescript-eslint/explicit-module-boundary-types': 'off',
+    'no-prototype-builtins': 'off'
   },
   overrides: [
     {
       files: ['*.js'],
-      plugins: ['import', 'prettier', '@typescript-eslint'],
+      // parser: '@babel/eslint-parser',
+      plugins: ['import', 'prettier'],
       extends: [
         'eslint:recommended',
         'plugin:react/recommended',
@@ -42,7 +45,11 @@ module.exports = {
         'plugin:import/errors',
         'plugin:import/warnings',
         'prettier'
-      ]
+      ],
+      rules: {
+        '@typescript-eslint/explicit-module-boundary-types': 'off',
+        'no-prototype-builtins': 'off'
+      }
     }
   ]
 };

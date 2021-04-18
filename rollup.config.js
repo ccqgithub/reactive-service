@@ -92,14 +92,13 @@ function createConfig(format, output, plugins = []) {
     };
     virtualPlugin = [
       virtual({
-        'rxjs/operators': 
-        `
+        'rxjs/operators': `
            import rxjs from 'rxjs'; 
            const { skip } = rxjs.operators;
            export { skip };
         `
       })
-    ]
+    ];
   }
 
   // should generate .d.ts files
