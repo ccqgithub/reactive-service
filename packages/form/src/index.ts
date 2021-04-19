@@ -1,5 +1,6 @@
 import {
   BehaviorSubject,
+  concat,
   from,
   Observable,
   of,
@@ -7,10 +8,22 @@ import {
   Subscription,
   throwError
 } from 'rxjs';
-import { catchError, switchMap, tap } from 'rxjs/operators';
+import {
+  catchError,
+  concatAll,
+  concatMap,
+  reduce,
+  switchMap,
+  tap,
+  map
+} from 'rxjs/operators';
 import validators from './validator';
+import { ValidateError } from './error';
 import {
   Schema,
+  FieldSchema,
+  ArrayFieldSchema,
+  FieldInitSchema,
   Value,
   Data,
   Rules,
@@ -20,7 +33,8 @@ import {
   ArrayFields,
   ValidateStatus,
   Validator,
-  FieldErrors
+  FieldErrors,
+  RuleError
 } from './types';
 
 export type RSFieldWaiting = {
@@ -33,6 +47,7 @@ export type RSFieldChildren = {
 };
 
 class RSField {
+  name: string;
   rules: Rules | DynamicRules = [];
   fields: Fields | DynamicFields | ArrayFields | null = null;
   shouldValidate = (value: Value, oldValue: Value) => value !== oldValue;
@@ -47,7 +62,7 @@ class RSField {
     errors: [],
     fieldErrors: {}
   });
-  validate$ = new Subject();
+  validate$: Subject<any> = new Subject();
 
   form: RSForm;
   waiting: RSFieldWaiting | null = null;
@@ -61,16 +76,17 @@ class RSField {
     return this.status$$.value;
   }
 
-  constructor(args: Schema, value: Value, form: RSForm) {
-    const { rules, fields = null } = args;
+  constructor(args: FieldInitSchema, value: Value, form: RSForm) {
+    const { name, rules, fields = null } = args;
+    this.name = name;
     this.rules = rules;
     this.fields = fields;
     this.value$$ = new BehaviorSubject(value);
     this.form = form;
 
     // fields
-    if (this.fields) {
-      const schemas = this.buildSchemas();
+    if (fields) {
+      const schemas = this.buildChildrenSchemas();
       Object.keys(schemas).forEach((key) => {
         this.children[key] = new RSField(schemas[key], value[key], this.form);
       });
@@ -112,35 +128,39 @@ class RSField {
     });
   }
 
-  buildSchemas(): Fields {
+  buildChildrenSchemas(): Record<string, FieldInitSchema> {
     const { fields, value, form } = this;
-    if (!fields) return {};
+    if (!fields || typeof value !== 'object') return {};
 
-    const result = {} as Fields;
     const schemas =
       typeof fields === 'function' ? fields(value, form.state) : { ...fields };
 
     if (Array.isArray(schemas)) {
-      schemas.forEach((item) => {
-        if (!item.key) throw new Error(`Array field need a key!`);
-        result[item.key] = item;
+      const result = {} as Record<string, FieldInitSchema>;
+      schemas.forEach((item, index) => {
+        if (!item.name) throw new Error(`Array field need a key!`);
+        result[index] = item;
       });
       return result;
     }
 
     if (typeof schemas === 'object') {
+      const result = {} as Record<string, FieldInitSchema>;
       Object.keys(schemas).forEach((key) => {
-        result[key] = schemas[key];
+        result[key] = {
+          ...schemas[key],
+          name: key
+        };
       });
       return result;
     }
 
-    throw new Error(`Errir fields!`);
+    throw new Error(`Error fields!`);
   }
 
   updateFields() {
     const { children, value } = this;
-    const newSchemas = this.buildSchemas() || {};
+    const newSchemas = this.buildChildrenSchemas() || {};
     const oldKeys = Object.keys(this.children);
     const newKeys = Object.keys(newSchemas);
 
@@ -174,7 +194,7 @@ class RSField {
         ? this.rules(value, form.state)
         : this.rules;
 
-    let ob$ = of<any>([]);
+    const obArr: Observable<RuleError[]>[] = [];
     rules.forEach((rule) => {
       let validator: Validator = rule.validator;
       if (!validator) {
@@ -185,11 +205,11 @@ class RSField {
       if (!validator) return;
 
       let res: any;
-      const v$ = new Observable((observer) => {
+      const v$ = new Observable<RuleError[]>((observer) => {
         res = rule.validator(
           rule,
           value,
-          (errors: string[]) => {
+          (errors: RuleError[]) => {
             observer.next(errors);
             observer.complete();
           },
@@ -197,14 +217,26 @@ class RSField {
           {}
         );
       });
-      if (res instanceof Observable || res instanceof Promise) {
-        ob$ = ob$.pipe(switchMap(() => from(res)));
+      if (res instanceof Observable) {
+        obArr.push(res);
+      } else if (res instanceof Promise) {
+        return obArr.push(from(res));
       } else {
-        ob$ = ob$.pipe(switchMap(() => v$));
+        return obArr.push(v$);
       }
     });
 
-    return ob$;
+    return of(...obArr).pipe(
+      concatAll(),
+      reduce<RuleError[]>((prev, cur) => prev.concat(...cur), []),
+      map((errors) => {
+        return errors.map((error) => {
+          return typeof error === 'string'
+            ? new ValidateError(error, this.name)
+            : new ValidateError(error.message, this.name);
+        });
+      })
+    );
   }
 
   validate(): Observable<string[]> {
@@ -261,7 +293,7 @@ class RSForm {
           errors,
           fieldErrors
         });
-      }),
+      })
       // throwError((error, caught) => {
       //   console.log(error);
       //   return caught;
