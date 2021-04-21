@@ -1,53 +1,44 @@
 import { ValidateError } from './error';
 
-export type Value = any;
-export type Data = Record<string, any>;
+export type FieldValue = any;
+export type FormData = Record<string, any>;
 
-export type Rule = Record<string, any>;
-export type Rules = Rule[];
-export type DynamicRules = (value: Value, source: Data) => Rules;
-
-export type Fields = {
-  [fieldName: string]: FieldSchema;
+export type FieldRule = {
+  required?: boolean;
+  len?: number;
+  min?: number;
+  max: number;
+  pattern?: RegExp;
+  enum?: any[];
+  validator?: Validator;
 };
-export type ArrayFields = ArrayFieldSchema[];
-export type DynamicFields = (
-  value: Value,
-  source: Data
-) => Fields | ArrayFields;
 
 export type FieldSchema = {
-  rules: Rules | DynamicRules;
-  fields?: Fields | ArrayFields | DynamicFields;
-};
-export type ArrayFieldSchema = {
-  name: string;
-  rules: Rules | DynamicRules;
-  fields?: Fields | ArrayFields | DynamicFields;
-};
-export type FieldInitSchema = {
-  name: string;
-  rules: Rules | DynamicRules;
-  fields?: Fields | ArrayFields | DynamicFields;
+  type: string;
+  name?: string;
+  rules: FieldRule[];
+  fields?: FieldSchema[] | Record<string, FieldSchema>;
 };
 
-export type RuleError = string | Error;
+export type FormSchema =
+  | Record<string, FieldSchema>
+  | ((data: FormData) => Record<string, FieldSchema>);
+
 export type FieldErrors = {
-  [field: string]: {
-    errors: ValidateError[];
-    fieldErrors: FieldErrors;
-  };
+  errors: ValidateError[];
+  fields: Record<string, ValidateError>;
 };
+
 export type ValidateStatus = {
   validating: boolean;
   errors: ValidateError[];
-  fieldErrors: FieldErrors;
+  fields: Record<string, FieldErrors>;
 };
 
 export type Validator = (
-  rule: Rule,
-  value: Value,
-  callback: (errors: string[]) => void,
-  source: Data,
+  rule: FieldRule,
+  value: FieldValue,
+  callback: (errors: (string | Error)[]) => void,
+  source: FormData,
   Options: Record<string, any>
 ) => void;

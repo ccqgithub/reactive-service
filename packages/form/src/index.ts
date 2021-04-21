@@ -20,26 +20,19 @@ import {
 import validators from './validator';
 import { ValidateError } from './error';
 import {
-  Schema,
+  FieldValue,
+  FormData,
+  FieldRule,
   FieldSchema,
-  ArrayFieldSchema,
-  FieldInitSchema,
-  Value,
-  Data,
-  Rules,
-  DynamicRules,
-  Fields,
-  DynamicFields,
-  ArrayFields,
-  ValidateStatus,
-  Validator,
+  FormSchema,
   FieldErrors,
-  RuleError
+  ValidateStatus,
+  Validator
 } from './types';
 
 export type RSFieldWaiting = {
-  promise: Promise<any>;
-  resolve: (value?: any) => void;
+  promise: Promise<ValidateError[]>;
+  resolve: (errors: ValidateError[]) => void;
 };
 
 export type RSFieldChildren = {
@@ -47,20 +40,21 @@ export type RSFieldChildren = {
 };
 
 class RSField {
+  type: string;
   name: string;
-  rules: Rules | DynamicRules = [];
-  fields: Fields | DynamicFields | ArrayFields | null = null;
-  shouldValidate = (value: Value, oldValue: Value) => value !== oldValue;
+  rules: FieldRule[];
+  shouldValidate = (value: FieldValue, oldValue: FieldValue) =>
+    value !== oldValue;
 
-  children: RSFieldChildren = {};
+  fields: RSFieldChildren = {};
 
-  value$$: BehaviorSubject<Value>;
+  value$$: BehaviorSubject<FieldValue>;
   status$$: BehaviorSubject<ValidateStatus> = new BehaviorSubject<
     ValidateStatus
   >({
     validating: false,
     errors: [],
-    fieldErrors: {}
+    fields: {}
   });
   validate$: Subject<any> = new Subject();
 
@@ -76,21 +70,18 @@ class RSField {
     return this.status$$.value;
   }
 
-  constructor(args: FieldInitSchema, value: Value, form: RSForm) {
-    const { name, rules, fields = null } = args;
+  constructor(schema: FieldSchema, value: FieldValue, form: RSForm) {
+    const { type, name, rules } = schema;
+
+    if (!name) throw new Error('Need a name for RSField!');
+
+    this.type = type;
     this.name = name;
     this.rules = rules;
-    this.fields = fields;
-    this.value$$ = new BehaviorSubject(value);
     this.form = form;
+    this.value$$ = new BehaviorSubject(value);
 
-    // fields
-    if (fields) {
-      const schemas = this.buildChildrenSchemas();
-      Object.keys(schemas).forEach((key) => {
-        this.children[key] = new RSField(schemas[key], value[key], this.form);
-      });
-    }
+    this.updateFields(schema, value);
 
     const subscription = this.validate$
       .pipe(
@@ -128,62 +119,43 @@ class RSField {
     });
   }
 
-  buildChildrenSchemas(): Record<string, FieldInitSchema> {
-    const { fields, value, form } = this;
-    if (!fields || typeof value !== 'object') return {};
-
-    const schemas =
-      typeof fields === 'function' ? fields(value, form.state) : { ...fields };
-
-    if (Array.isArray(schemas)) {
-      const result = {} as Record<string, FieldInitSchema>;
-      schemas.forEach((item, index) => {
-        if (!item.name) throw new Error(`Array field need a key!`);
-        result[index] = item;
+  updateFields(schema: FieldSchema, value: FieldValue) {
+    const newFields: Record<string, FieldSchema> = {};
+    if (Array.isArray(schema.fields)) {
+      schema.fields.forEach((item) => {
+        if (!item.name) throw new Error('Array field need a name property!');
+        newFields[item.name] = item;
       });
-      return result;
-    }
-
-    if (typeof schemas === 'object') {
-      const result = {} as Record<string, FieldInitSchema>;
-      Object.keys(schemas).forEach((key) => {
-        result[key] = {
-          ...schemas[key],
+    } else if (typeof schema.fields === 'object') {
+      Object.keys(schema.fields).forEach((key) => {
+        newFields[key] = {
+          ...(schema.fields as Record<string, FieldSchema>)[key],
           name: key
         };
       });
-      return result;
     }
 
-    throw new Error(`Error fields!`);
-  }
-
-  updateFields() {
-    const { children, value } = this;
-    const newSchemas = this.buildChildrenSchemas() || {};
-    const oldKeys = Object.keys(this.children);
-    const newKeys = Object.keys(newSchemas);
-
+    const oldKeys = Object.keys(this.fields);
+    const newKeys = Object.keys(newFields);
     oldKeys.forEach((key) => {
       if (newKeys.indexOf(key) === -1) {
-        children[key].dispose();
-        delete children[key];
+        this.fields[key].dispose();
+        delete this.fields[key];
       }
     });
-
     newKeys.forEach((key) => {
       if (oldKeys.indexOf(key) === -1) {
-        children[key] = new RSField(newSchemas[key], value[key], this.form);
+        this.fields[key] = new RSField(newFields[key], value[key], this.form);
       } else {
-        children[key].update(value[key]);
+        this.fields[key].update(newFields[key], value[key]);
       }
     });
   }
 
-  update(value: Value) {
+  update(schema: FieldSchema, value: FieldValue) {
     const shouldValidate = this.shouldValidate(value, this.value);
     this.value$$.next(value);
-    this.updateFields();
+    this.updateFields(schema, value);
     shouldValidate && this.validate();
   }
 
@@ -254,16 +226,21 @@ class RSField {
 
 export type RSFormStatus = {
   validating: boolean;
-  errors: string[];
-  fieldErrors: FieldErrors;
+  errors: ValidateError[];
+  fieldErrors: Record<string, FieldErrors>;
 };
 
 class RSForm {
-  form;
+  schema: Record<string, FieldSchema>;
+  fields: Record<string, RSField>;
+
+  buildSchema: FormSchema | null = null;
+
   dirty = false;
 
   subscription: Subscription | null = null;
 
+  data$$: BehaviorSubject<FormData>;
   status$$: BehaviorSubject<RSFormStatus> = new BehaviorSubject<RSFormStatus>({
     validating: false,
     errors: [],
@@ -271,8 +248,19 @@ class RSForm {
   });
   validate$: Subject<any> = new Subject<any>();
 
-  constructor(descriptor: Schema, data: Data) {
-    this.form = new RSField(descriptor, data, this);
+  constructor(schema: FormSchema, data: FormData) {
+    if (typeof schema === 'function') {
+      this.schema = schema(data);
+      this.buildSchema = schema;
+    } else {
+      this.schema = schema;
+    }
+
+    this.data$$ = new BehaviorSubject(data);
+    this.fields = {};
+    Object.keys(this.schema).forEach((key) => {
+      this.fields[key] = new RSField(this.schema[key], this.data[key], this);
+    });
 
     const validate$ = this.validate$.pipe(
       tap(() => {
@@ -307,16 +295,37 @@ class RSForm {
     return this.status$$.value;
   }
 
-  get state() {
-    return this.state$$.value;
+  get data() {
+    return this.data$$.value;
   }
 
-  updateData(data) {
-    this.state$$.next({
-      ...this.state,
+  update(data: FormData) {
+    this.data$$.next({
+      ...this.data,
       ...data
     });
-    this.form.updateData(data, data, this);
+
+    // update fields
+    const schema =
+      typeof this.buildSchema === 'function'
+        ? this.buildSchema(data)
+        : this.schema;
+    const oldSchema = this.schema;
+    this.schema = schema;
+
+    const newKeys = Object.keys(schema);
+    const oldKeys = Object.keys(oldSchema);
+    oldKeys.forEach((key) => {
+      if (newKeys.indexOf(key) === -1) {
+        this.fields[key].dispose();
+        return;
+      }
+      this.fields[key].update(this.data[key], this.schema[key]);
+    });
+    newKeys.forEach((key) => {
+      if (oldKeys.indexOf(key) !== -1) return;
+      this.fields[key] = new RSField(this.schema[key], this.data[key], this);
+    });
   }
 
   validate() {
