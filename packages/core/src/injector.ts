@@ -1,15 +1,12 @@
-import 'reflect-metadata';
-
 import { debug } from './util';
 import InjectionToken from './token';
-import { injectMetadataKey, InjectMetadata } from './inject';
 import {
   InjectionProvide,
   InjectionValue,
   InjectionDisposer,
   InjectionProvider,
   InjectionProviderObj,
-  InjectionGet,
+  InjectionContext,
   InjectionConstructor
 } from './types';
 
@@ -20,7 +17,7 @@ type ProviderRecord = {
   useExisiting?: InjectionProvide | null;
   dispose?: InjectionDisposer | null;
   useFactory?:
-    | (<P extends InjectionProvide>(inject: InjectionGet) => InjectionValue<P>)
+    | (<P extends InjectionProvide>(ctx: InjectionContext) => InjectionValue<P>)
     | null;
 };
 type ProviderRecords = Map<InjectionProvide, ProviderRecord>;
@@ -107,65 +104,56 @@ export default class Injector {
     return false;
   }
 
-  get<P extends InjectionProvide>(provide: P): InjectionValue<P> | null {
+  get<P extends InjectionProvide>(
+    provide: P,
+    args: { optional: true }
+  ): InjectionValue<P> | null;
+  get<P extends InjectionProvide>(
+    provide: P,
+    args?: { optional?: false }
+  ): InjectionValue<P>;
+  get<P extends InjectionProvide>(
+    provide: P,
+    args?: { optional?: boolean }
+  ): InjectionValue<P> | null {
     const record = this.records.get(provide);
+    let service = null;
 
     // not register on self
     if (!record) {
-      if (this.parent) return this.parent.get(provide);
-      return null;
+      if (this.parent) service = this.parent.get(provide);
+    } else {
+      // lazy init service
+      if (typeof record.value === 'undefined') {
+        this.$_initRecord(record);
+      }
+      service = record.value || null;
     }
 
-    // lazy init service
-    if (typeof record.value === 'undefined') {
-      this.$_initRecord(record);
+    if (!service && !args?.optional) {
+      throw new Error(`Service not be provided, and not optional!`);
     }
 
-    return record.value || null;
+    return service;
   }
 
   private $_initRecord(record: ProviderRecord): void {
+    const ctx: InjectionContext = {
+      useService: (provide: InjectionProvide, opts: any) => {
+        return this.get(provide, opts);
+      }
+    };
+
     // token 中的 factory 优先
     // injection token's default value
     if (record.provide instanceof InjectionToken && record.provide.factory) {
-      const inject: InjectionGet = (provide, opts = {}) => {
-        const { optional } = opts;
-        const service = this.get(provide);
-
-        if (!service && !optional) {
-          debug(record);
-          debug(InjectionToken);
-          throw new Error(
-            `Can not find all deps in the DI tree when init the InjectionToken, please provide them before you use the InjectionToken's factory!`
-          );
-        }
-
-        return service;
-      };
-      record.value = record.provide.factory(inject);
+      record.value = record.provide.factory(ctx);
     }
 
     // use class
     if (record.useClass) {
       // find deps for the useClass
-      const metadata: InjectMetadata<InjectionProvide>[] =
-        Reflect.getOwnMetadata(injectMetadataKey, record.useClass) || [];
-      const deps = metadata.map((item) => {
-        if (typeof item !== 'object') return undefined;
-        const { provide, optional } = item;
-        const service = this.get(provide);
-
-        if (!service && !optional) {
-          debug(record);
-          throw new Error(
-            `Can not find all deps in the DI tree when init the useClass, please provide them before you use the useClass!`
-          );
-        }
-
-        return service;
-      });
-
-      record.value = new record.useClass(...deps);
+      record.value = new record.useClass(ctx);
       return;
     }
 
@@ -177,20 +165,7 @@ export default class Injector {
 
     // use factory
     if (record.useFactory) {
-      const inject: InjectionGet = (provide, opts = {}) => {
-        const { optional } = opts;
-        const service = this.get(provide);
-
-        if (!service && !optional) {
-          debug(record);
-          throw new Error(
-            `Can not find all deps in the DI tree when init the useFactory, please provide them before you use the useFactory!`
-          );
-        }
-
-        return service;
-      };
-      record.value = record.useFactory<typeof record.provide>(inject);
+      record.value = record.useFactory<typeof record.provide>(ctx);
     }
   }
 

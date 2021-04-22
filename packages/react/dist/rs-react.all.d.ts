@@ -1,14 +1,9 @@
 import { BehaviorSubject } from 'rxjs';
 import { forwardRef } from 'react';
-import { InjectionProvide } from '@reactive-service/core';
+import { GetService } from '@reactive-service/core';
 import { InjectionProvider } from '@reactive-service/core';
-import { InjectionValue } from '@reactive-service/core';
 import { Observable } from 'rxjs';
 import { default as React_2 } from 'react';
-
-export declare type GetService<P extends InjectionProvide = InjectionProvide> = (provide: P, opts?: {
-    optional?: boolean;
-}) => InjectionValue<P>;
 
 export declare type RSRefObject<T = any> = {
     current: T;
@@ -41,7 +36,7 @@ export declare function useObservableError<T = any>(ob$: Observable<T>, onlyAfte
 
 export declare function useRSRef<T = any>(value: T): RSRefObject<T>;
 
-export declare function useService<P extends InjectionProvide>(provide: P): InjectionValue<P>;
+export declare const useService: GetService;
 
 export declare function useValueRef<T = any>(value: T): RSRefObject<T>;
 

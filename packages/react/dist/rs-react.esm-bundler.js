@@ -1,4 +1,4 @@
-import { Injector, debug } from '@reactive-service/core';
+import { Injector } from '@reactive-service/core';
 export * from '@reactive-service/core';
 import React, { createContext, useContext, forwardRef, useState, useRef, useCallback, useEffect } from 'react';
 import hoistStatics from 'hoist-non-react-statics';
@@ -13,13 +13,8 @@ const ServiceInjector = (props) => {
 };
 const ServiceConsumer = (props) => {
     const injector = useContext(InjectorContext);
-    const getService = (provide, opts = {}) => {
-        const { optional = false } = opts;
-        const service = injector.get(provide);
-        if (!service && !optional) {
-            debug(provide, 'error');
-            throw new Error(`Can not find the service, you provide it?`);
-        }
+    const getService = (provide, opts) => {
+        return injector.get(provide, opts);
     };
     return typeof props.children === 'function'
         ? props.children({ getService })
@@ -72,16 +67,16 @@ function useValueRef(value) {
 }
 function useGetService() {
     const provider = useContext(InjectorContext);
-    const getService = useCallback((provide) => {
-        return provider.get(provide);
+    const getService = useCallback((provide, opts) => {
+        return provider.get(provide, opts);
     }, [provider]);
     return getService;
 }
-function useService(provide) {
+const useService = (provide, opts) => {
     const getService = useGetService();
-    const service = getService(provide);
+    const service = getService(provide, opts);
     return service;
-}
+};
 function useObservable(ob$, defaultValue) {
     const [state, setState] = useState(defaultValue);
     useEffect(() => {

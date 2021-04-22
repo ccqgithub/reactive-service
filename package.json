@@ -55,7 +55,6 @@
   },
   "dependencies": {
     "enquirer": "^2.3.6",
-    "reflect-metadata": "0.1.13",
     "semver": "^7.3.5"
   }
 }

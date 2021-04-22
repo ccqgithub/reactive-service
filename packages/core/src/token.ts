@@ -1,13 +1,13 @@
-import { InjectionGet } from './types';
+import { InjectionContext } from './types';
 
 export default class InjectionToken<V = any> {
   private _desc: string;
-  factory?: ((inject: InjectionGet) => V) | null;
+  factory?: ((ctx: InjectionContext) => V) | null;
 
   constructor(
     desc: string,
     options?: {
-      factory: (inject: InjectionGet) => V;
+      factory: (ctx: InjectionContext) => V;
     }
   ) {
     this._desc = desc;

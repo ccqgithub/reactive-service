@@ -2,7 +2,6 @@
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
-require('reflect-metadata');
 var rxjs = require('rxjs');
 
 const configSettings = {
@@ -52,26 +51,6 @@ class InjectionToken {
         return `InjectionToken: ${this._desc}`;
     }
 }
-
-const injectMetadataKey = Symbol('inject:constructor:params');
-/* class AppService {
-  constructor(@Inject(MessageService, { optional: true }) messageService: MessageService) {
-    console.log(messageService.getMessages());
-  }
-} */
-const Inject = (provide, args = {}) => {
-    return (target, propertyKey, parameterIndex) => {
-        if (propertyKey !== undefined) {
-            throw new Error('The @inject decorator can only be used on consturctor parameters!');
-        }
-        const existingParameters = Reflect.getOwnMetadata(injectMetadataKey, target) || [];
-        existingParameters[parameterIndex] = {
-            provide,
-            optional: !!args.optional
-        };
-        Reflect.defineMetadata(injectMetadataKey, existingParameters, target);
-    };
-};
 
 // service injector
 class Injector {
@@ -138,52 +117,41 @@ class Injector {
             return this.parent.isProvided(provide);
         return false;
     }
-    get(provide) {
+    get(provide, args) {
         const record = this.records.get(provide);
+        let service = null;
         // not register on self
         if (!record) {
             if (this.parent)
-                return this.parent.get(provide);
-            return null;
+                service = this.parent.get(provide);
         }
-        // lazy init service
-        if (typeof record.value === 'undefined') {
-            this.$_initRecord(record);
+        else {
+            // lazy init service
+            if (typeof record.value === 'undefined') {
+                this.$_initRecord(record);
+            }
+            service = record.value || null;
         }
-        return record.value || null;
+        if (!service && !args?.optional) {
+            throw new Error(`Service not be provided, and not optional!`);
+        }
+        return service;
     }
     $_initRecord(record) {
+        const ctx = {
+            useService: (provide, opts) => {
+                return this.get(provide, opts);
+            }
+        };
         // token 中的 factory 优先
         // injection token's default value
         if (record.provide instanceof InjectionToken && record.provide.factory) {
-            const inject = (provide, opts = {}) => {
-                const { optional } = opts;
-                const service = this.get(provide);
-                if (!service && !optional) {
-                    debug(record);
-                    debug(InjectionToken);
-                    throw new Error(`Can not find all deps in the DI tree when init the InjectionToken, please provide them before you use the InjectionToken's factory!`);
-                }
-                return service;
-            };
-            record.value = record.provide.factory(inject);
+            record.value = record.provide.factory(ctx);
         }
         // use class
         if (record.useClass) {
             // find deps for the useClass
-            const metadata = Reflect.getOwnMetadata(injectMetadataKey, record.useClass) || [];
-            const deps = metadata.map((item) => {
-                if (typeof item !== 'object')
-                    return undefined;
-                const { provide, optional } = item;
-                const service = this.get(provide);
-                if (!service && !optional) {
-                    debug(record);
-                    throw new Error(`Can not find all deps in the DI tree when init the useClass, please provide them before you use the useClass!`);
-                }
-                return service;
-            });
-            record.value = new record.useClass(...deps);
+            record.value = new record.useClass(ctx);
             return;
         }
         // alias: use exisiting
@@ -193,16 +161,7 @@ class Injector {
         }
         // use factory
         if (record.useFactory) {
-            const inject = (provide, opts = {}) => {
-                const { optional } = opts;
-                const service = this.get(provide);
-                if (!service && !optional) {
-                    debug(record);
-                    throw new Error(`Can not find all deps in the DI tree when init the useFactory, please provide them before you use the useFactory!`);
-                }
-                return service;
-            };
-            record.value = record.useFactory(inject);
+            record.value = record.useFactory(ctx);
         }
     }
     dispose() {
@@ -315,7 +274,6 @@ class Service extends Disposable {
 }
 
 exports.Disposable = Disposable;
-exports.Inject = Inject;
 exports.InjectionToken = InjectionToken;
 exports.Injector = Injector;
 exports.Service = Service;

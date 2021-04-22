@@ -22,9 +22,14 @@ declare type Disposer = () => void;
 
 export declare const empty: unique symbol;
 
-export declare const Inject: <P extends InjectionProvide = InjectionProvide>(provide: P, args?: {
-    optional?: boolean;
-}) => (target: InjectionConstructor, propertyKey: string | symbol | undefined, parameterIndex: number) => void;
+export declare interface GetService {
+    <P extends InjectionProvide>(provide: P, opts: {
+        optional: true;
+    }): InjectionValue<P> | null;
+    <P extends InjectionProvide>(provide: P, opts?: {
+        optional?: false;
+    }): InjectionValue<P>;
+}
 
 export declare type InjectionClass = Record<string, any>;
 
@@ -32,11 +37,11 @@ export declare type InjectionConstructor = {
     new (...args: any[]): InjectionClass;
 };
 
-export declare type InjectionDisposer = <P extends InjectionProvide = InjectionProvide>(service: InjectionValue<P>) => void;
+export declare type InjectionContext = {
+    useService: GetService;
+};
 
-export declare type InjectionGet = <P extends InjectionProvide>(provide: P, opts?: {
-    optional?: boolean;
-}) => InjectionValue<P> | null;
+export declare type InjectionDisposer = <P extends InjectionProvide = InjectionProvide>(service: InjectionValue<P>) => void;
 
 export declare type InjectionProvide = InjectionToken | InjectionConstructor;
 
@@ -47,15 +52,15 @@ export declare type InjectionProviderObj = {
     useValue?: any;
     useClass?: InjectionConstructor | null;
     useExisting?: InjectionProvide | null;
-    useFactory?: ((inject: InjectionGet) => InjectionValue<InjectionProvide>) | null;
+    useFactory?: ((ctx: InjectionContext) => InjectionValue<InjectionProvide>) | null;
     dispose?: InjectionDisposer | null;
 };
 
 export declare class InjectionToken<V = any> {
     private _desc;
-    factory?: ((inject: InjectionGet) => V) | null;
+    factory?: ((ctx: InjectionContext) => V) | null;
     constructor(desc: string, options?: {
-        factory: (inject: InjectionGet) => V;
+        factory: (ctx: InjectionContext) => V;
     });
     toString(): string;
 }
@@ -67,7 +72,12 @@ export declare class Injector {
     private records;
     constructor(providers?: InjectionProvider[], parent?: Injector | null);
     isProvided(provide: InjectionProvide): boolean;
-    get<P extends InjectionProvide>(provide: P): InjectionValue<P> | null;
+    get<P extends InjectionProvide>(provide: P, args: {
+        optional: true;
+    }): InjectionValue<P> | null;
+    get<P extends InjectionProvide>(provide: P, args?: {
+        optional?: false;
+    }): InjectionValue<P>;
     private $_initRecord;
     dispose(): void;
 }

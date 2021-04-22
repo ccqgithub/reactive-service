@@ -1,14 +1,5 @@
 import React from 'react';
-import {
-  InjectionProvider,
-  InjectionProvide,
-  InjectionValue
-} from '@reactive-service/core';
-
-export type GetService<P extends InjectionProvide = InjectionProvide> = (
-  provide: P,
-  opts?: { optional?: boolean }
-) => InjectionValue<P>;
+import { InjectionProvider, GetService } from '@reactive-service/core';
 
 export type ServiceInjectorProps = {
   providers?: InjectionProvider[];

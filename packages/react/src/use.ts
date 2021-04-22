@@ -1,8 +1,8 @@
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { Subject, BehaviorSubject, Observable } from 'rxjs';
-import { InjectionProvide, InjectionValue } from '@reactive-service/core';
+import { GetService } from '@reactive-service/core';
 import { InjectorContext } from './context';
-import { GetService, RSRefObject } from './types';
+import { RSRefObject } from './types';
 
 export function useRSRef<T = any>(value: T): RSRefObject<T> {
   const [state, setState] = useState(value);
@@ -33,23 +33,21 @@ export function useValueRef<T = any>(value: T): RSRefObject<T> {
 
 export function useGetService(): GetService {
   const provider = useContext(InjectorContext);
-  const getService = useCallback(
-    <P extends InjectionProvide>(provide: P): InjectionValue<P> | null => {
-      return provider.get(provide);
+  const getService: GetService = useCallback(
+    (provide: any, opts: any) => {
+      return provider.get(provide, opts);
     },
     [provider]
   );
   return getService;
 }
 
-export function useService<P extends InjectionProvide>(
-  provide: P
-): InjectionValue<P> {
+export const useService: GetService = (provide: any, opts: any) => {
   const getService = useGetService();
-  const service = getService(provide);
+  const service = getService(provide, opts);
 
   return service;
-}
+};
 
 export function useObservable<T = any>(ob$: Observable<T>, defaultValue: T): T {
   const [state, setState] = useState(defaultValue);
