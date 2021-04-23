@@ -1,5 +1,6 @@
 import * as util from '../util';
 import required from './required';
+import { FieldRule, FieldValue, FormData } from '../types';
 
 /* eslint max-len:0 */
 
@@ -69,21 +70,17 @@ const types = {
   }
 };
 
-/**
- *  Rule for validating the type of a value.
- *
- *  @param rule The validation rule.
- *  @param value The value of the field on the source object.
- *  @param source The source object being validated.
- *  @param errors An array of errors that this rule may add
- *  validation errors to.
- *  @param options The validation options.
- *  @param options.messages The validation messages.
- */
-function type(rule: any, value: any, source: any, errors: any, options: any) {
+function type(
+  rule: FieldRule,
+  value: FieldValue,
+  source: FormData,
+  options: Record<string, any>
+): string[] {
+  const errors: string[] = [];
+
   if (rule.required && value === undefined) {
-    required(rule, value, source, errors, options);
-    return;
+    required(rule, value, source, options);
+    return errors;
   }
   const custom = [
     'integer',
@@ -98,19 +95,29 @@ function type(rule: any, value: any, source: any, errors: any, options: any) {
     'url',
     'hex'
   ];
-  const ruleType = rule.type;
+  const ruleType = options.type;
   if (custom.indexOf(ruleType) > -1) {
     if (!(types as any)[ruleType](value)) {
       errors.push(
-        util.format(options.messages.types[ruleType], rule.fullField, rule.type)
+        util.format(
+          options.messages.types[ruleType],
+          options.fullField,
+          options.type
+        )
       );
     }
     // straight typeof check
-  } else if (ruleType && typeof value !== rule.type) {
+  } else if (ruleType && typeof value !== options.type) {
     errors.push(
-      util.format(options.messages.types[ruleType], rule.fullField, rule.type)
+      util.format(
+        options.messages.types[ruleType],
+        options.fullField,
+        options.type
+      )
     );
   }
+
+  return errors;
 }
 
 export default type;

@@ -5,57 +5,50 @@ import {
   Observable,
   of,
   Subject,
-  Subscription,
-  throwError
+  zip
 } from 'rxjs';
-import {
-  catchError,
-  concatAll,
-  concatMap,
-  reduce,
-  switchMap,
-  tap,
-  map
-} from 'rxjs/operators';
+import { catchError, concatAll, reduce, switchMap, tap } from 'rxjs/operators';
 import validators from './validator';
-import { ValidateError } from './error';
 import {
   FieldValue,
   FormData,
   FieldRule,
   FieldSchema,
   FormSchema,
-  FieldErrors,
-  ValidateStatus,
   Validator
 } from './types';
 
 export type RSFieldWaiting = {
-  promise: Promise<ValidateError[]>;
-  resolve: (errors: ValidateError[]) => void;
+  promise: Promise<string[]>;
+  resolve: (errors: string[]) => void;
 };
 
 export type RSFieldChildren = {
   [fieldName: string]: RSField;
 };
 
-class RSField {
-  type: string;
+export type RSFieldOptions = {
+  form: RSForm;
   name: string;
+  namePath: string;
+  index: string | number;
+};
+
+class RSField {
+  index: number | string;
+  name: string;
+  namePath: string;
   rules: FieldRule[];
   shouldValidate = (value: FieldValue, oldValue: FieldValue) =>
     value !== oldValue;
 
   fields: RSFieldChildren = {};
 
+  dirty$$: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
+  validating$$: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
+  errors$$: BehaviorSubject<string[]> = new BehaviorSubject<string[]>([]);
   value$$: BehaviorSubject<FieldValue>;
-  status$$: BehaviorSubject<ValidateStatus> = new BehaviorSubject<
-    ValidateStatus
-  >({
-    validating: false,
-    errors: [],
-    fields: {}
-  });
+
   validate$: Subject<any> = new Subject();
 
   form: RSForm;
@@ -66,18 +59,28 @@ class RSField {
     return this.value$$.value;
   }
 
-  get status() {
-    return this.status$$.value;
+  get dirty() {
+    return this.dirty$$.value;
   }
 
-  constructor(schema: FieldSchema, value: FieldValue, form: RSForm) {
-    const { type, name, rules } = schema;
+  get errors() {
+    return this.errors$$.value;
+  }
+
+  get validating() {
+    return this.validating$$.value;
+  }
+
+  constructor(schema: FieldSchema, value: FieldValue, options: RSFieldOptions) {
+    const { rules = [] } = schema;
+    const { name, namePath, form, index } = options;
 
     if (!name) throw new Error('Need a name for RSField!');
 
-    this.type = type;
-    this.name = name;
     this.rules = rules;
+    this.name = name;
+    this.namePath = namePath;
+    this.index = index;
     this.form = form;
     this.value$$ = new BehaviorSubject(value);
 
@@ -86,10 +89,7 @@ class RSField {
     const subscription = this.validate$
       .pipe(
         tap(() => {
-          this.status$$.next({
-            ...this.status$$.value,
-            validating: true
-          });
+          this.validating$$.next(true);
           // waiting
           const waiting: RSFieldWaiting = {} as RSFieldWaiting;
           waiting.promise = new Promise((resolve) => {
@@ -98,15 +98,12 @@ class RSField {
           this.waiting = waiting;
         }),
         switchMap(() => {
-          return this.validateRules();
+          return this.validateAll();
         }),
         tap((errors) => {
-          this.status$$.next({
-            ...this.status$$.value,
-            validating: false,
-            errors
-          });
-          this.waiting && this.waiting.resolve();
+          this.validating$$.next(false);
+          this.errors$$.next(errors);
+          this.waiting && this.waiting.resolve(errors);
         }),
         catchError((error, caught) => {
           console.log(error);
@@ -120,17 +117,21 @@ class RSField {
   }
 
   updateFields(schema: FieldSchema, value: FieldValue) {
-    const newFields: Record<string, FieldSchema> = {};
+    const newFields: Record<
+      string,
+      FieldSchema & { index: string | number }
+    > = {};
     if (Array.isArray(schema.fields)) {
-      schema.fields.forEach((item) => {
+      schema.fields.forEach((item, index) => {
         if (!item.name) throw new Error('Array field need a name property!');
-        newFields[item.name] = item;
+        newFields[item.name] = { ...item, index };
       });
     } else if (typeof schema.fields === 'object') {
       Object.keys(schema.fields).forEach((key) => {
         newFields[key] = {
           ...(schema.fields as Record<string, FieldSchema>)[key],
-          name: key
+          name: key,
+          index: key
         };
       });
     }
@@ -145,75 +146,90 @@ class RSField {
     });
     newKeys.forEach((key) => {
       if (oldKeys.indexOf(key) === -1) {
-        this.fields[key] = new RSField(newFields[key], value[key], this.form);
+        this.fields[key] = new RSField(
+          newFields[key],
+          this.getSubValue(value, newFields[key].index),
+          {
+            form: this.form,
+            name: key,
+            namePath: `${this.name}.${key}`,
+            index: newFields[key].index
+          }
+        );
       } else {
-        this.fields[key].update(newFields[key], value[key]);
+        this.fields[key].update(
+          newFields[key],
+          this.getSubValue(value, newFields[key].index)
+        );
       }
     });
   }
 
   update(schema: FieldSchema, value: FieldValue) {
+    const { rules = [] } = schema;
+
+    this.rules = rules;
+
     const shouldValidate = this.shouldValidate(value, this.value);
     this.value$$.next(value);
     this.updateFields(schema, value);
-    shouldValidate && this.validate();
+    shouldValidate && this.validate$.next();
   }
 
   validateRules() {
-    const { value, form } = this;
-    const rules =
-      typeof this.rules === 'function'
-        ? this.rules(value, form.state)
-        : this.rules;
+    const { value, rules, form } = this;
 
-    const obArr: Observable<RuleError[]>[] = [];
+    const obArr: Observable<string[]>[] = [];
     rules.forEach((rule) => {
-      let validator: Validator = rule.validator;
+      let validator: Validator | null = rule.validator || null;
       if (!validator) {
         const type = rule.type || 'any';
-        validator = (validators as any)[type];
+        validator = validators[type as keyof typeof validators];
       }
 
       if (!validator) return;
 
-      let res: any;
-      const v$ = new Observable<RuleError[]>((observer) => {
-        res = rule.validator(
-          rule,
-          value,
-          (errors: RuleError[]) => {
-            observer.next(errors);
-            observer.complete();
-          },
-          this.form.state,
-          {}
-        );
+      const res = validator(rule, value, form.data, {
+        field: this.name,
+        fullField: this.namePath
       });
+
       if (res instanceof Observable) {
         obArr.push(res);
       } else if (res instanceof Promise) {
         return obArr.push(from(res));
       } else {
-        return obArr.push(v$);
+        return of(res);
       }
     });
 
     return of(...obArr).pipe(
       concatAll(),
-      reduce<RuleError[]>((prev, cur) => prev.concat(...cur), []),
-      map((errors) => {
-        return errors.map((error) => {
-          return typeof error === 'string'
-            ? new ValidateError(error, this.name)
-            : new ValidateError(error.message, this.name);
-        });
-      })
+      reduce<string[]>((prev, cur) => prev.concat(...cur), [])
     );
   }
 
-  validate(): Observable<string[]> {
-    this.validate$.next();
+  validateFields() {
+    const { fields } = this;
+    const keys = Object.keys(fields);
+    const arr = keys.map((key) => {
+      return fields[key].validateAll();
+    });
+    return zip(...arr);
+  }
+
+  validateAll(): Observable<string[]> {
+    return concat(this.validateRules, this.validateFields);
+  }
+
+  validate() {
+    if (!this.waiting) this.validate$.next();
     return from((this.waiting as RSFieldWaiting).promise);
+  }
+
+  getSubValue(value: any, key: string | number) {
+    if (typeof value !== 'object') return undefined;
+    return value[key];
   }
 
   dispose() {
@@ -224,79 +240,77 @@ class RSField {
   }
 }
 
-export type RSFormStatus = {
-  validating: boolean;
-  errors: ValidateError[];
-  fieldErrors: Record<string, FieldErrors>;
-};
-
 class RSForm {
-  schema: Record<string, FieldSchema>;
-  fields: Record<string, RSField>;
+  schema: FormSchema;
+  disposers: (() => void)[] = [];
 
-  buildSchema: FormSchema | null = null;
+  form: RSField;
 
-  dirty = false;
-
-  subscription: Subscription | null = null;
-
+  dirty$$: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
+  validating$$: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
+  errors$$: BehaviorSubject<string[]> = new BehaviorSubject<string[]>([]);
   data$$: BehaviorSubject<FormData>;
-  status$$: BehaviorSubject<RSFormStatus> = new BehaviorSubject<RSFormStatus>({
-    validating: false,
-    errors: [],
-    fieldErrors: {}
-  });
+
   validate$: Subject<any> = new Subject<any>();
 
-  constructor(schema: FormSchema, data: FormData) {
-    if (typeof schema === 'function') {
-      this.schema = schema(data);
-      this.buildSchema = schema;
-    } else {
-      this.schema = schema;
-    }
-
-    this.data$$ = new BehaviorSubject(data);
-    this.fields = {};
-    Object.keys(this.schema).forEach((key) => {
-      this.fields[key] = new RSField(this.schema[key], this.data[key], this);
-    });
-
-    const validate$ = this.validate$.pipe(
-      tap(() => {
-        this.dirty = true;
-        this.status$$.next({
-          ...this.status$$.value,
-          validating: true
-        });
-      }),
-      switchMap((v) => {
-        const ob$ = this.form.validate();
-        return ob$;
-      }),
-      tap((errors) => {
-        this.status$$.next({
-          ...this.status$$.value,
-          validating: false,
-          errors,
-          fieldErrors
-        });
-      })
-      // throwError((error, caught) => {
-      //   console.log(error);
-      //   return caught;
-      // })
-    );
-
-    this.subscription = validate$.subscribe();
+  get dirty() {
+    return this.dirty$$.value;
   }
 
-  get status() {
-    return this.status$$.value;
+  get validating() {
+    return this.validating$$.value;
+  }
+
+  get errors() {
+    return this.errors$$.value;
   }
 
   get data() {
     return this.data$$.value;
+  }
+
+  constructor(schema: FormSchema, data: FormData) {
+    this.schema = schema;
+
+    this.data$$ = new BehaviorSubject(data);
+    this.form = new RSField(this.getSchema(), data, {
+      form: this,
+      name: 'form',
+      namePath: 'form',
+      index: 'form'
+    });
+
+    const validate$ = this.validate$.pipe(
+      tap(() => {
+        !this.dirty && this.dirty$$.next(true);
+        this.validating$$.next(true);
+      }),
+      switchMap(() => {
+        const ob$ = this.form.validate();
+        return ob$;
+      }),
+      tap((errors) => {
+        this.validating$$.next(false);
+        this.errors$$.next(errors);
+      }),
+      catchError((error, caught) => {
+        console.log(error);
+        return caught;
+      })
+    );
+    const subscription = validate$.subscribe();
+    this.disposers.push(() => {
+      subscription.unsubscribe();
+    });
+  }
+
+  getSchema() {
+    const { schema } = this;
+    const fields = typeof schema === 'function' ? schema(this.data) : schema;
+    return {
+      rules: [],
+      fields
+    };
   }
 
   update(data: FormData) {
@@ -305,36 +319,16 @@ class RSForm {
       ...data
     });
 
-    // update fields
-    const schema =
-      typeof this.buildSchema === 'function'
-        ? this.buildSchema(data)
-        : this.schema;
-    const oldSchema = this.schema;
-    this.schema = schema;
-
-    const newKeys = Object.keys(schema);
-    const oldKeys = Object.keys(oldSchema);
-    oldKeys.forEach((key) => {
-      if (newKeys.indexOf(key) === -1) {
-        this.fields[key].dispose();
-        return;
-      }
-      this.fields[key].update(this.data[key], this.schema[key]);
-    });
-    newKeys.forEach((key) => {
-      if (oldKeys.indexOf(key) !== -1) return;
-      this.fields[key] = new RSField(this.schema[key], this.data[key], this);
-    });
+    this.form.update(this.getSchema(), this.data);
   }
 
   validate() {
     this.validate$.next();
   }
 
-  unsubscribe() {
-    if (this.subscription) {
-      this.subscription.unsubscribe();
-    }
+  dispose() {
+    this.disposers.forEach((disposer) => {
+      disposer();
+    });
   }
 }

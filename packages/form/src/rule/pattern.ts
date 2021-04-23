@@ -1,23 +1,14 @@
 import * as util from '../util';
+import { FieldRule, FieldValue, FormData } from '../types';
 
-/**
- *  Rule for validating a regular expression pattern.
- *
- *  @param rule The validation rule.
- *  @param value The value of the field on the source object.
- *  @param source The source object being validated.
- *  @param errors An array of errors that this rule may add
- *  validation errors to.
- *  @param options The validation options.
- *  @param options.messages The validation messages.
- */
 function pattern(
-  rule: any,
-  value: any,
-  source: any,
-  errors: any,
-  options: any
-) {
+  rule: FieldRule,
+  value: FieldValue,
+  source: FormData,
+  options: Record<string, any>
+): string[] {
+  const errors = [];
+
   if (rule.pattern) {
     if (rule.pattern instanceof RegExp) {
       // if a RegExp instance is passed, reset `lastIndex` in case its `global`
@@ -28,7 +19,7 @@ function pattern(
         errors.push(
           util.format(
             options.messages.pattern.mismatch,
-            rule.fullField,
+            options.fullField,
             value,
             rule.pattern
           )
@@ -40,7 +31,7 @@ function pattern(
         errors.push(
           util.format(
             options.messages.pattern.mismatch,
-            rule.fullField,
+            options.fullField,
             value,
             rule.pattern
           )
@@ -48,6 +39,8 @@ function pattern(
       }
     }
   }
+
+  return errors;
 }
 
 export default pattern;

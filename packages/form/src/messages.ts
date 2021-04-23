@@ -3,7 +3,7 @@ export function newMessages(): any {
     default: 'Validation error on field %s',
     required: '%s is required',
     enum: '%s must be one of %s',
-    whitespace: '%s cannot be empty',
+    notWhitespace: '%s cannot be empty',
     date: {
       format: '%s date %s is invalid for format %s',
       parse: '%s date could not be parsed, %s is invalid ',
@@ -43,7 +43,7 @@ export function newMessages(): any {
       range: '%s must be between %s and %s in length'
     },
     pattern: {
-      mismatch: '%s value %s does not match pattern %s'
+      match: '%s value %s does not match pattern %s'
     },
     clone() {
       const cloned = JSON.parse(JSON.stringify(this));

@@ -1,18 +1,20 @@
 import * as util from '../util';
 import { FieldRule, FieldValue, FormData } from '../types';
 
-function required(
+function notWhitespace(
   rule: FieldRule,
   value: FieldValue,
   source: FormData,
   options: Record<string, any>
 ): string[] {
+  if (!rule.notWhitespace) return [];
+
   const errors: string[] = [];
-  if (rule.required && util.isEmptyValue(value, options.type)) {
-    errors.push(util.format(options.messages.required, options.fullField));
+  if (/^\s+$/.test(value) || value === '') {
+    errors.push(util.format(options.messages.notWhitespace, options.fullField));
   }
 
   return errors;
 }
 
-export default required;
+export default notWhitespace;

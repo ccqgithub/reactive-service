@@ -1,16 +1,9 @@
 import rules from '../rule/index';
 
-function required(
-  rule: any,
-  value: any,
-  callback: any,
-  source: any,
-  options: any
-) {
+function required(rule: any, value: any, source: any, options: any) {
   const errors: any = [];
-  const type = Array.isArray(value) ? 'array' : typeof value;
-  rules.required(rule, value, source, errors, options, type);
-  callback(errors);
+  errors.push(...rules.required(rule, value, source, options));
+  return errors;
 }
 
 export default required;

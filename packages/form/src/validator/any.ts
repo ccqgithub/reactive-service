@@ -1,27 +1,17 @@
 import rules from '../rule/index.js';
-import { isEmptyValue } from '../util';
+import { FieldRule, FieldValue, FormData } from '../types';
 
-/**
- *  Performs validation for any type.
- *
- *  @param rule The validation rule.
- *  @param value The value of the field on the source object.
- *  @param callback The callback function.
- *  @param source The source object being validated.
- *  @param options The validation options.
- *  @param options.messages The validation messages.
- */
-function any(rule: any, value: any, callback: any, source: any, options: any) {
-  const errors: any = [];
-  const validate =
-    rule.required || (!rule.required && source.hasOwnProperty(rule.field));
-  if (validate) {
-    if (isEmptyValue(value) && !rule.required) {
-      return callback();
-    }
-    rules.required(rule, value, source, errors, options);
+function any(
+  rule: FieldRule,
+  value: FieldValue,
+  source: FormData,
+  options: Record<string, any>
+): string[] {
+  const errors: string[] = [];
+  if (rule.required) {
+    errors.push(...rules.required(rule, value, source, options));
   }
-  callback(errors);
+  return errors;
 }
 
 export default any;

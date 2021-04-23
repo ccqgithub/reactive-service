@@ -1,17 +1,14 @@
 import * as util from '../util';
+import { FieldRule, FieldValue, FormData } from '../types';
 
-/**
- *  Rule for validating minimum and maximum allowed values.
- *
- *  @param rule The validation rule.
- *  @param value The value of the field on the source object.
- *  @param source The source object being validated.
- *  @param errors An array of errors that this rule may add
- *  validation errors to.
- *  @param options The validation options.
- *  @param options.messages The validation messages.
- */
-function range(rule: any, value: any, source: any, errors: any, options: any) {
+function range(
+  rule: FieldRule,
+  value: FieldValue,
+  source: FormData,
+  options: Record<string, any>
+): string[] {
+  const errors: any[] = [];
+
   const len = typeof rule.len === 'number';
   const min = typeof rule.min === 'number';
   const max = typeof rule.max === 'number';
@@ -33,7 +30,7 @@ function range(rule: any, value: any, source: any, errors: any, options: any) {
   // the validation rule rule should use the
   // type property to also test for a particular type
   if (!key) {
-    return false;
+    return errors;
   }
   if (arr) {
     val = value.length;
@@ -45,27 +42,29 @@ function range(rule: any, value: any, source: any, errors: any, options: any) {
   if (len) {
     if (val !== rule.len) {
       errors.push(
-        util.format(options.messages[key].len, rule.fullField, rule.len)
+        util.format(options.messages[key].len, options.fullField, rule.len)
       );
     }
-  } else if (min && !max && val < rule.min) {
+  } else if (min && !max && val < (rule.min as number)) {
     errors.push(
-      util.format(options.messages[key].min, rule.fullField, rule.min)
+      util.format(options.messages[key].min, options.fullField, rule.min)
     );
   } else if (max && !min && val > rule.max) {
     errors.push(
-      util.format(options.messages[key].max, rule.fullField, rule.max)
+      util.format(options.messages[key].max, options.fullField, rule.max)
     );
-  } else if (min && max && (val < rule.min || val > rule.max)) {
+  } else if (min && max && (val < (rule.min as number) || val > rule.max)) {
     errors.push(
       util.format(
         options.messages[key].range,
-        rule.fullField,
+        options.fullField,
         rule.min,
         rule.max
       )
     );
   }
+
+  return errors;
 }
 
 export default range;

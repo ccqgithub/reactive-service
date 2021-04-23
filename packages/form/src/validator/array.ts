@@ -1,35 +1,20 @@
 import rules from '../rule/index';
-/**
- *  Validates an array.
- *
- *  @param rule The validation rule.
- *  @param value The value of the field on the source object.
- *  @param callback The callback function.
- *  @param source The source object being validated.
- *  @param options The validation options.
- *  @param options.messages The validation messages.
- */
-function array(
-  rule: any,
-  value: any,
-  callback: any,
-  source: any,
-  options: any
-) {
-  const errors: any = [];
+
+function array(rule: any, value: any, source: any, options: any): string[] {
+  const errors: string[] = [];
   const validate =
     rule.required || (!rule.required && source.hasOwnProperty(rule.field));
   if (validate) {
     if ((value === undefined || value === null) && !rule.required) {
-      return callback();
+      return errors;
     }
-    rules.required(rule, value, source, errors, options, 'array');
+    errors.push(...rules.required(rule, value, source, options));
     if (value !== undefined && value !== null) {
-      rules.type(rule, value, source, errors, options);
-      rules.range(rule, value, source, errors, options);
+      errors.push(...rules.type(rule, value, source, options));
+      errors.push(...rules.range(rule, value, source, options));
     }
   }
-  callback(errors);
+  return errors;
 }
 
 export default array;

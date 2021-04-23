@@ -1,5 +1,5 @@
 import required from './required';
-import whitespace from './whitespace';
+import whitespace from './not-whitespace';
 import type from './type';
 import range from './range';
 import enumRule from './enum';

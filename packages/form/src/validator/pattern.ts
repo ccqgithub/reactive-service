@@ -1,39 +1,20 @@
 import rules from '../rule/index.js';
 import { isEmptyValue } from '../util';
 
-/**
- *  Validates a regular expression pattern.
- *
- *  Performs validation when a rule only contains
- *  a pattern property but is not declared as a string type.
- *
- *  @param rule The validation rule.
- *  @param value The value of the field on the source object.
- *  @param callback The callback function.
- *  @param source The source object being validated.
- *  @param options The validation options.
- *  @param options.messages The validation messages.
- */
-function pattern(
-  rule: any,
-  value: any,
-  callback: any,
-  source: any,
-  options: any
-) {
+function pattern(rule: any, value: any, source: any, options: any) {
   const errors: any = [];
   const validate =
     rule.required || (!rule.required && source.hasOwnProperty(rule.field));
   if (validate) {
     if (isEmptyValue(value, 'string') && !rule.required) {
-      return callback();
+      return errors;
     }
-    rules.required(rule, value, source, errors, options);
+    errors.push(...rules.required(rule, value, source, options));
     if (!isEmptyValue(value, 'string')) {
-      rules.pattern(rule, value, source, errors, options);
+      errors.push(...rules.pattern(rule, value, source, options));
     }
   }
-  callback(errors);
+  return errors;
 }
 
 export default pattern;

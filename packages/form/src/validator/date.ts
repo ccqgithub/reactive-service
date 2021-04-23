@@ -1,7 +1,7 @@
 import rules from '../rule/index.js';
 import { isEmptyValue } from '../util';
 
-function date(rule: any, value: any, callback: any, source: any, options: any) {
+function date(rule: any, value: any, source: any, options: any) {
   // console.log('integer rule called %j', rule);
   const errors: any = [];
   const validate =
@@ -9,9 +9,9 @@ function date(rule: any, value: any, callback: any, source: any, options: any) {
   // console.log('validate on %s value', value);
   if (validate) {
     if (isEmptyValue(value, 'date') && !rule.required) {
-      return callback();
+      return errors;
     }
-    rules.required(rule, value, source, errors, options);
+    errors.push(...rules.required(rule, value, source, options));
     if (!isEmptyValue(value, 'date')) {
       let dateObject;
 
@@ -20,14 +20,15 @@ function date(rule: any, value: any, callback: any, source: any, options: any) {
       } else {
         dateObject = new Date(value);
       }
-
-      rules.type(rule, dateObject, source, errors, options);
+      errors.push(...rules.type(rule, dateObject, source, options));
       if (dateObject) {
-        rules.range(rule, dateObject.getTime(), source, errors, options);
+        errors.push(
+          ...rules.range(rule, dateObject.getTime(), source, options)
+        );
       }
     }
   }
-  callback(errors);
+  return errors;
 }
 
 export default date;
