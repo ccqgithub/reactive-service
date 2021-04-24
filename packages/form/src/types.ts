@@ -23,9 +23,8 @@ export type FieldSchema = {
   fields?: FieldSchema[] | Record<string, FieldSchema>;
 };
 
-export type FormSchema<D extends RSFormData = RSFormData> =
-  | Record<string, FieldSchema>
-  | ((data: D) => Record<string, FieldSchema>);
+export type FormSchema = Record<string, FieldSchema>;
+export type BuildFormSchema<S extends FormSchema> = (data: RSFormData) => S;
 
 export type FieldErrors = Record<
   string,
