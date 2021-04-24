@@ -11,7 +11,7 @@
     "allowJs": false,
     "checkJs": false,
     "strict": true,
-    "noUnusedLocals": true,
+    "noUnusedLocals": false,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "resolveJsonModule": true,

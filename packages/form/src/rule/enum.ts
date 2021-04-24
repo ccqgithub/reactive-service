@@ -1,12 +1,12 @@
 import * as util from '../util';
-import { FieldRule, FieldValue, FormData } from '../types';
+import { FieldRule, FieldValue, RSFormData } from '../types';
 
 const ENUM = 'enum';
 
 function enumerable(
   rule: FieldRule,
   value: FieldValue,
-  source: FormData,
+  source: RSFormData,
   options: Record<string, any>
 ): string[] {
   if (!rule[ENUM] || !Array.isArray(rule[ENUM])) return [];

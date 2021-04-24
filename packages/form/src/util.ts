@@ -6,7 +6,7 @@ export function format(
   f: ((...args: any[]) => string) | string,
   ...args: any[]
 ): any {
-  let i = 1;
+  let i = 0;
   const len = args.length;
 
   if (typeof f === 'function') {

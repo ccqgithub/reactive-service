@@ -53,4 +53,6 @@ export function newMessages(): any {
   };
 }
 
-export const messages = newMessages();
+const messages = newMessages();
+
+export default messages;

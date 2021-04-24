@@ -1,17 +1,20 @@
 import * as util from '../util';
-import { FieldRule, FieldValue, FormData } from '../types';
+import { FieldRule, FieldValue, RSFormData } from '../types';
 
 function range(
   rule: FieldRule,
   value: FieldValue,
-  source: FormData,
+  source: RSFormData,
   options: Record<string, any>
 ): string[] {
-  const errors: any[] = [];
+  const errors: string[] = [];
 
   const len = typeof rule.len === 'number';
   const min = typeof rule.min === 'number';
   const max = typeof rule.max === 'number';
+
+  if (!len && !min && !max) return errors;
+
   // 正则匹配码点范围从U+010000一直到U+10FFFF的文字（补充平面Supplementary Plane）
   const spRegexp = /[\uD800-\uDBFF][\uDC00-\uDFFF]/g;
   let val = value;
@@ -32,6 +35,7 @@ function range(
   if (!key) {
     return errors;
   }
+
   if (arr) {
     val = value.length;
   }

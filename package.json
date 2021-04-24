@@ -5,6 +5,7 @@
   "scripts": {
     "build-core": "node scripts/build.js core -t",
     "build-react": "node scripts/build.js react -t",
+    "build-form": "node scripts/build.js form -t",
     "size": "node scripts/build.js vue runtime-dom size-check -p -f global",
     "lint": "eslint --ext .ts packages/*/src/**",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s",

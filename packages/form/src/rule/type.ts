@@ -1,6 +1,6 @@
 import * as util from '../util';
 import required from './required';
-import { FieldRule, FieldValue, FormData } from '../types';
+import { FieldRule, FieldValue, RSFormData } from '../types';
 
 /* eslint max-len:0 */
 
@@ -73,15 +73,19 @@ const types = {
 function type(
   rule: FieldRule,
   value: FieldValue,
-  source: FormData,
+  source: RSFormData,
   options: Record<string, any>
 ): string[] {
   const errors: string[] = [];
+  const ruleType = rule.type;
 
-  if (rule.required && value === undefined) {
-    required(rule, value, source, options);
+  if (!ruleType) return errors;
+
+  if (value === null || value === undefined) {
+    if (rule.required) return required(rule, value, source, options);
     return errors;
   }
+
   const custom = [
     'integer',
     'float',
@@ -95,25 +99,21 @@ function type(
     'url',
     'hex'
   ];
-  const ruleType = options.type;
+
   if (custom.indexOf(ruleType) > -1) {
     if (!(types as any)[ruleType](value)) {
       errors.push(
         util.format(
           options.messages.types[ruleType],
           options.fullField,
-          options.type
+          ruleType
         )
       );
     }
     // straight typeof check
-  } else if (ruleType && typeof value !== options.type) {
+  } else if (ruleType && typeof value !== ruleType) {
     errors.push(
-      util.format(
-        options.messages.types[ruleType],
-        options.fullField,
-        options.type
-      )
+      util.format(options.messages.types[ruleType], options.fullField, ruleType)
     );
   }
 

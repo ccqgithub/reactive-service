@@ -1,7 +1,8 @@
 import { Observable } from 'rxjs';
+import ValidateError from './error';
 
 export type FieldValue = any;
-export type FormData = Record<string, any>;
+export type RSFormData = Record<string, any>;
 
 export type FieldRule = {
   type?: string;
@@ -13,6 +14,7 @@ export type FieldRule = {
   enum?: string[];
   notWhitespace?: boolean;
   validator?: Validator;
+  message?: string;
 };
 
 export type FieldSchema = {
@@ -21,18 +23,21 @@ export type FieldSchema = {
   fields?: FieldSchema[] | Record<string, FieldSchema>;
 };
 
-export type FormSchema =
+export type FormSchema<D extends RSFormData = RSFormData> =
   | Record<string, FieldSchema>
-  | ((data: FormData) => Record<string, FieldSchema>);
+  | ((data: D) => Record<string, FieldSchema>);
 
-export type FieldErrors = {
-  errors: string[];
-  fields: Record<string, FieldErrors>;
-};
+export type FieldErrors = Record<
+  string,
+  {
+    errors: ValidateError[];
+    fields: FieldErrors;
+  }
+>;
 
 export type Validator = (
   rule: FieldRule,
   value: FieldValue,
-  source: FormData,
+  source: RSFormData,
   Options: Record<string, any>
 ) => string[] | Promise<string[]> | Observable<string[]>;

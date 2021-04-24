@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+  <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
+  <script type="application/javascript" src="https://unpkg.com/@reactivex/rxjs@6.6.6/dist/global/rxjs.umd.js"></script>
+  <script type="application/javascript" src="../../packages/react/dist/rs-react.global.js"></script>
+  <script type="application/javascript" src="../../packages/form/dist/rs-form.global.js"></script>
+  <style>
+    .form {
+      width: 400px;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const formSchema = {
+      name: {
+        rules: [
+          { type: 'string', required: true }
+        ]
+      },
+      email: {
+        rules: [
+          { type: 'email', required: true }
+        ]
+      }
+    };
+    const defaultData = {
+      name: '',
+      email: '',
+    };
+    const form = new RSForm.Form(formSchema, defaultData);
+    const Form = () => {
+      const data = RSReact.useBehavior(form.data$$);
+      const errors = RSReact.useBehavior(form.errors$$);
+      const fields = RSReact.useBehavior(form.fields$$);
+
+      const submit = React.useCallback((e) => {
+        e.preventDefault();
+        form.validate().then((errors) => {
+          console.log(errors);
+        });
+      }, []);
+
+      return (
+        <form className="form">
+          <div className="form-item">
+            <div>
+              {errors.map((error, i) => (
+                <div key={i}>{error.message}</div>
+              ))}  
+            </div>
+            <div>
+              {JSON.stringify(fields)}  
+            </div>
+          </div>
+          <div className="form-item">
+            <label>Name:</label>
+            <input
+              type="text"
+              value={data.name} 
+              onChange={
+                (e) => {
+                  form.update({
+                    name: e.target.value
+                  })
+                }
+              }
+            />
+          </div>
+          <div className="form-item">
+            <label>Email:</label>
+            <input
+              type="text"
+              value={data.email} 
+              onChange={
+                (e) => {
+                  form.update({
+                    email: e.target.value
+                  });
+                }
+              }
+            />
+          </div>
+          <div className="form-item">
+            <button onClick={submit}>提交</button>
+          </div>
+        </form>
+      )
+    };
+
+    ReactDOM.render(
+      <Form />,
+      document.getElementById('root')
+    );
+
+  </script>
+</body>
+</html>

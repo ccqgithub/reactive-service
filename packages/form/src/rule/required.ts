@@ -1,14 +1,16 @@
 import * as util from '../util';
-import { FieldRule, FieldValue, FormData } from '../types';
+import { FieldRule, FieldValue, RSFormData } from '../types';
 
 function required(
   rule: FieldRule,
   value: FieldValue,
-  source: FormData,
+  source: RSFormData,
   options: Record<string, any>
 ): string[] {
+  if (!rule.required) return [];
+
   const errors: string[] = [];
-  if (rule.required && util.isEmptyValue(value, options.type)) {
+  if (util.isEmptyValue(value, rule.type)) {
     errors.push(util.format(options.messages.required, options.fullField));
   }
 
