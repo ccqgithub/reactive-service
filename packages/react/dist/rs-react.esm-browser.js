@@ -688,5 +688,14 @@ function useListenValue(value, listner) {
         ref.current(value);
     }, [value]);
 }
+function useSubscribe(ob$, args) {
+    const argsRef = useValueRef(args);
+    useEffect(() => {
+        const subscription = ob$.subscribe((v) => argsRef.current.next(v), (err) => argsRef.current.error(err));
+        return () => {
+            subscription.unsubscribe();
+        };
+    }, [ob$, argsRef]);
+}
 
-export { Disposable, InjectionToken, Injector, Service, ServiceConsumer, ServiceInjector, config, debug, empty, useBehavior, useGetService, useListenValue, useObservable, useObservableError, useRSRef, useService, useValueRef, withInjector };
+export { Disposable, InjectionToken, Injector, Service, ServiceConsumer, ServiceInjector, config, debug, empty, useBehavior, useGetService, useListenValue, useObservable, useObservableError, useRSRef, useService, useSubscribe, useValueRef, withInjector };

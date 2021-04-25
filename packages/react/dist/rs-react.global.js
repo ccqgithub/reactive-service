@@ -692,6 +692,15 @@ var RSReact = (function (exports, rxjs, React) {
           ref.current(value);
       }, [value]);
   }
+  function useSubscribe(ob$, args) {
+      const argsRef = useValueRef(args);
+      React.useEffect(() => {
+          const subscription = ob$.subscribe((v) => argsRef.current.next(v), (err) => argsRef.current.error(err));
+          return () => {
+              subscription.unsubscribe();
+          };
+      }, [ob$, argsRef]);
+  }
 
   exports.Disposable = Disposable;
   exports.InjectionToken = InjectionToken;
@@ -709,6 +718,7 @@ var RSReact = (function (exports, rxjs, React) {
   exports.useObservableError = useObservableError;
   exports.useRSRef = useRSRef;
   exports.useService = useService;
+  exports.useSubscribe = useSubscribe;
   exports.useValueRef = useValueRef;
   exports.withInjector = withInjector;
 

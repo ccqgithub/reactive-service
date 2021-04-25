@@ -38,6 +38,11 @@ export declare function useRSRef<T = any>(value: T): RSRefObject<T>;
 
 export declare const useService: GetService;
 
+export declare function useSubscribe<T = any>(ob$: Observable<T>, args: {
+    next: (p: T) => void;
+    error: (err: any) => void;
+}): void;
+
 export declare function useValueRef<T = any>(value: T): RSRefObject<T>;
 
 export declare const withInjector: (args: {

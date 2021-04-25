@@ -116,3 +116,22 @@ export function useListenValue<T = any>(
     ref.current(value);
   }, [value]);
 }
+
+export function useSubscribe<T = any>(
+  ob$: Observable<T>,
+  args: {
+    next: (p: T) => void;
+    error: (err: any) => void;
+  }
+) {
+  const argsRef = useValueRef(args);
+  useEffect(() => {
+    const subscription = ob$.subscribe(
+      (v) => argsRef.current.next(v),
+      (err) => argsRef.current.error(err)
+    );
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [ob$, argsRef]);
+}

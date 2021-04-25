@@ -136,6 +136,15 @@ function useListenValue(value, listner) {
         ref.current(value);
     }, [value]);
 }
+function useSubscribe(ob$, args) {
+    const argsRef = useValueRef(args);
+    React.useEffect(() => {
+        const subscription = ob$.subscribe((v) => argsRef.current.next(v), (err) => argsRef.current.error(err));
+        return () => {
+            subscription.unsubscribe();
+        };
+    }, [ob$, argsRef]);
+}
 
 exports.ServiceConsumer = ServiceConsumer;
 exports.ServiceInjector = ServiceInjector;
@@ -146,6 +155,7 @@ exports.useObservable = useObservable;
 exports.useObservableError = useObservableError;
 exports.useRSRef = useRSRef;
 exports.useService = useService;
+exports.useSubscribe = useSubscribe;
 exports.useValueRef = useValueRef;
 exports.withInjector = withInjector;
 Object.keys(core).forEach(function (k) {
