@@ -120,15 +120,17 @@ export function useListenValue<T = any>(
 export function useSubscribe<T = any>(
   ob$: Observable<T>,
   args: {
-    next: (p: T) => void;
-    error: (err: any) => void;
+    next?: (p: T) => void;
+    error?: (err: any) => void;
+    complete?: () => void;
   }
 ) {
   const argsRef = useValueRef(args);
   useEffect(() => {
     const subscription = ob$.subscribe(
-      (v) => argsRef.current.next(v),
-      (err) => argsRef.current.error(err)
+      (v) => argsRef.current.next && argsRef.current.next(v),
+      (err) => argsRef.current.error && argsRef.current.error(err),
+      () => argsRef.current.complete && argsRef.current.complete()
     );
     return () => {
       subscription.unsubscribe();

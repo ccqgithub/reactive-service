@@ -691,7 +691,7 @@ function useListenValue(value, listner) {
 function useSubscribe(ob$, args) {
     const argsRef = useValueRef(args);
     useEffect(() => {
-        const subscription = ob$.subscribe((v) => argsRef.current.next(v), (err) => argsRef.current.error(err));
+        const subscription = ob$.subscribe((v) => argsRef.current.next && argsRef.current.next(v), (err) => argsRef.current.error && argsRef.current.error(err), () => argsRef.current.complete && argsRef.current.complete());
         return () => {
             subscription.unsubscribe();
         };

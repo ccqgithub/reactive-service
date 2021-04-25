@@ -695,7 +695,7 @@ var RSReact = (function (exports, rxjs, React) {
   function useSubscribe(ob$, args) {
       const argsRef = useValueRef(args);
       React.useEffect(() => {
-          const subscription = ob$.subscribe((v) => argsRef.current.next(v), (err) => argsRef.current.error(err));
+          const subscription = ob$.subscribe((v) => argsRef.current.next && argsRef.current.next(v), (err) => argsRef.current.error && argsRef.current.error(err), () => argsRef.current.complete && argsRef.current.complete());
           return () => {
               subscription.unsubscribe();
           };
