@@ -1,5 +1,5 @@
 import { BehaviorSubject, Subject } from 'rxjs';
-import React, { createContext, useContext, forwardRef, useState, useRef, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, forwardRef, useState, useCallback, useEffect, useRef } from 'react';
 
 const configSettings = {
     logLevel: 'info' ,
@@ -602,27 +602,35 @@ const withInjector = (args) => {
 
 function useRSRef(value) {
     const [state, setState] = useState(value);
-    const resRef = {
-        get current() {
-            return state;
-        },
-        set current(v) {
-            setState(v);
-        }
-    };
+    const [resRef] = useState(() => {
+        return {
+            state,
+            setState,
+            get current() {
+                return this.state;
+            },
+            set current(v) {
+                this.setState && this.setState(v);
+            }
+        };
+    });
+    resRef.state = state;
+    resRef.setState = setState;
     return resRef;
 }
 function useValueRef(value) {
-    const ref = useRef(value);
-    ref.current = value;
-    const resRef = {
-        get current() {
-            return ref.current;
-        },
-        set current(v) {
-            throw new Error(`Can not set value to this ref of useRSWatchRef!`);
-        }
-    };
+    const [resRef] = useState(() => {
+        return {
+            state: value,
+            get current() {
+                return this.state;
+            },
+            set current(v) {
+                throw new Error(`Can not set value to this ref of useValueRef!`);
+            }
+        };
+    });
+    resRef.state = value;
     return resRef;
 }
 function useGetService() {

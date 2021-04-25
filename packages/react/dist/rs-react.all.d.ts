@@ -6,6 +6,8 @@ import { Observable } from 'rxjs';
 import { default as React_2 } from 'react';
 
 export declare type RSRefObject<T = any> = {
+    state: T;
+    setState?: React_2.Dispatch<React_2.SetStateAction<T>>;
     current: T;
 };
 

@@ -13,5 +13,7 @@ export type ServiceConsumerProps = {
 };
 
 export type RSRefObject<T = any> = {
+  state: T;
+  setState?: React.Dispatch<React.SetStateAction<T>>;
   current: T;
 };
