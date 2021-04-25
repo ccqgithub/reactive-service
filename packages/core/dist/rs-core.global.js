@@ -75,7 +75,7 @@ var RSCore = (function (exports, rxjs) {
                       debug(`These keys [${keys.join(',')}] can only use one, other will be ignored!`, 'warn');
                   }
                   // normalize
-                  const { useValue = null, ...rest } = p;
+                  const { useValue = undefined, ...rest } = p;
                   record = {
                       ...rest,
                       value: useValue

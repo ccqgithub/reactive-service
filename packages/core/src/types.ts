@@ -2,18 +2,26 @@ import InjectionToken from './token';
 
 export type InjectionClass = Record<string, any>;
 
-export type InjectionConstructor = {
-  new (...args: any[]): InjectionClass;
+export type InjectionConstructor<T = InjectionClass> = {
+  new (...args: any[]): T;
 };
 
-export type InjectionProvide = InjectionToken | InjectionConstructor;
+// eslint-disable-next-line @typescript-eslint/ban-types
+export type InjectionAbstractConstructor<T = InjectionClass> = Function & {
+  prototype: T;
+};
+
+export type InjectionProvide =
+  | InjectionToken
+  | InjectionConstructor
+  | InjectionAbstractConstructor;
 
 export type InjectionValue<
   P extends InjectionProvide
 > = P extends InjectionToken<infer V>
   ? V
-  : P extends InjectionConstructor
-  ? InstanceType<P>
+  : P extends { prototype: infer C }
+  ? C
   : never;
 
 export type InjectionDisposer = <P extends InjectionProvide = InjectionProvide>(

@@ -58,7 +58,7 @@ export default class Injector {
           );
         }
         // normalize
-        const { useValue = null, ...rest } = p;
+        const { useValue = undefined, ...rest } = p;
         record = {
           ...rest,
           value: useValue

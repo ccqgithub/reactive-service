@@ -31,10 +31,14 @@ export declare interface GetService {
     }): InjectionValue<P>;
 }
 
+export declare type InjectionAbstractConstructor<T = InjectionClass> = Function & {
+    prototype: T;
+};
+
 export declare type InjectionClass = Record<string, any>;
 
-export declare type InjectionConstructor = {
-    new (...args: any[]): InjectionClass;
+export declare type InjectionConstructor<T = InjectionClass> = {
+    new (...args: any[]): T;
 };
 
 export declare type InjectionContext = {
@@ -43,7 +47,7 @@ export declare type InjectionContext = {
 
 export declare type InjectionDisposer = <P extends InjectionProvide = InjectionProvide>(service: InjectionValue<P>) => void;
 
-export declare type InjectionProvide = InjectionToken | InjectionConstructor;
+export declare type InjectionProvide = InjectionToken | InjectionConstructor | InjectionAbstractConstructor;
 
 export declare type InjectionProvider = InjectionProvide | InjectionProviderObj;
 
@@ -65,7 +69,9 @@ export declare class InjectionToken<V = any> {
     toString(): string;
 }
 
-export declare type InjectionValue<P extends InjectionProvide> = P extends InjectionToken<infer V> ? V : P extends InjectionConstructor ? InstanceType<P> : never;
+export declare type InjectionValue<P extends InjectionProvide> = P extends InjectionToken<infer V> ? V : P extends {
+    prototype: infer C;
+} ? C : never;
 
 export declare class Injector {
     private parent;
