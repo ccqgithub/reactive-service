@@ -119,7 +119,7 @@ class Injector {
         // not register on self
         if (!record) {
             if (this.parent)
-                service = this.parent.get(provide);
+                service = this.parent.get(provide, args);
         }
         else {
             // lazy init service

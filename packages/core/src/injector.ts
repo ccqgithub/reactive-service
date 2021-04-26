@@ -114,14 +114,14 @@ export default class Injector {
   ): InjectionValue<P>;
   get<P extends InjectionProvide>(
     provide: P,
-    args?: { optional?: boolean }
+    args: any
   ): InjectionValue<P> | null {
     const record = this.records.get(provide);
     let service = null;
 
     // not register on self
     if (!record) {
-      if (this.parent) service = this.parent.get(provide);
+      if (this.parent) service = this.parent.get(provide, args);
     } else {
       // lazy init service
       if (typeof record.value === 'undefined') {

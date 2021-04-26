@@ -1,6 +1,6 @@
 {
   "name": "@reactive-service/react",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "a service tool for react with rxjs",
   "main": "index.js",
   "module": "dist/rs-react.esm-bundler.js",
@@ -28,7 +28,7 @@
   "author": "Season Chen",
   "license": "MIT",
   "dependencies": {
-    "@reactive-service/core": "^0.5.1",
+    "@reactive-service/core": "^0.5.2",
     "hoist-non-react-statics": "^3.3.2"
   },
   "peerDependencies": {
