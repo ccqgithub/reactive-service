@@ -1,10 +1,12 @@
 import RSField from './field';
-import { FormSchema, BuildFormSchema, RSFormData } from './types';
+import { Schema, BuildSchema, RSFormData } from './types';
 
-export default class RSForm<S extends FormSchema = FormSchema> {
-  private schema: S | BuildFormSchema<S>;
-
-  private form: RSField;
+export default class RSForm<
+  S extends Schema = Schema,
+  D extends RSFormData = RSFormData
+> {
+  private schema: S | BuildSchema<S, D>;
+  private form: RSField<S, D>;
   dirty = false;
 
   get data$$() {
@@ -35,9 +37,9 @@ export default class RSForm<S extends FormSchema = FormSchema> {
     return this.form.fields;
   }
 
-  constructor(schema: S | BuildFormSchema<S>, data: RSFormData) {
+  constructor(schema: S | BuildSchema<S, D>, data: D) {
     this.schema = schema;
-    this.form = new RSField(this.getFormFieldSchema(), data, {
+    this.form = new RSField<S, D>(this.getFormFieldSchema(data), data, {
       form: this,
       name: '',
       namePath: '',
@@ -45,17 +47,20 @@ export default class RSForm<S extends FormSchema = FormSchema> {
     });
   }
 
-  private getFormFieldSchema() {
+  private getFormFieldSchema(data: D) {
     const { schema } = this;
     const fields = typeof schema === 'function' ? schema(this.data) : schema;
     return {
+      value: data,
       rules: [],
       fields
     };
   }
 
   update(data: Partial<D>) {
-    this.form.update(this.getFormFieldSchema(), { ...this.data, ...data });
+    const newData =  { ...this.data, ...data };
+    const schema = this.getFormFieldSchema(newData);
+    this.form.update(schema);
   }
 
   validate() {

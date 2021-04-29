@@ -23,9 +23,10 @@ import ValidateError from './error';
 import {
   FieldValue,
   FieldRule,
-  FieldSchema,
+  Schema,
   FieldErrors,
-  RSFormData
+  RSFormData,
+  SchemaField
 } from './types';
 
 export type RSFieldWaiting = {
@@ -38,13 +39,13 @@ export type RSFieldChildren = {
 };
 
 export type RSFieldOptions = {
-  form: RSForm;
+  form: RSForm<any, any>;
   name: string;
   namePath: string;
   index: string;
 };
 
-export default class RSField {
+export default class RSField<D extends RSFormData = RSFormData> {
   private index: string;
   private namePath: string;
   private rules: FieldRule[];
@@ -61,7 +62,7 @@ export default class RSField {
 
   validate$: Subject<any> = new Subject();
 
-  private form: RSForm;
+  private form: RSForm<any, any>;
   private waiting: RSFieldWaiting | null = null;
   private disposers: (() => void)[] = [];
 
@@ -89,7 +90,7 @@ export default class RSField {
     return this.validating$$.value;
   }
 
-  constructor(schema: FieldSchema, value: FieldValue, options: RSFieldOptions) {
+  constructor(schema: SchemaField, value: FieldValue, options: RSFieldOptions) {
     const { rules = [] } = schema;
     const { name, namePath, form, index } = options;
 
@@ -102,7 +103,7 @@ export default class RSField {
     this.form = form;
     this.value$$ = new BehaviorSubject(value);
 
-    this.updateFields(schema, value);
+    this.updateFields(schema);
 
     const subscription = this.validate$
       .pipe(
@@ -134,12 +135,12 @@ export default class RSField {
     });
 
     // errors
-    const errorsSub = this.errors$$.pipe(skip(1)).subscribe(() => {
-      this.form.updateErrors();
-    });
-    this.disposers.push(() => {
-      errorsSub.unsubscribe();
-    });
+    // const errorsSub = this.errors$$.pipe(skip(1)).subscribe(() => {
+    //   this.form.updateErrors();
+    // });
+    // this.disposers.push(() => {
+    //   errorsSub.unsubscribe();
+    // });
 
     // 如果表单验证过，则字段初始化时候就验证
     if (this.form.dirty) {
@@ -147,7 +148,7 @@ export default class RSField {
     }
   }
 
-  private updateFields(schema: FieldSchema, value: FieldValue) {
+  private updateFields(schema: SchemaField) {
     const newFields: Record<string, FieldSchema & { index: string }> = {};
     if (Array.isArray(schema.fields)) {
       schema.fields.forEach((item, index) => {
