@@ -3,37 +3,45 @@ import Disposable from './disposable';
 import { debug } from './util';
 import { InjectionClass } from './types';
 
-export type ServiceSources<S extends Record<string, any>> = {
+export type ServiceState<S extends Record<string, any>> = {
   [P in keyof S]: BehaviorSubject<S[P]>;
 };
 export type ServiceActions<A extends Record<string, any>> = {
   [P in keyof A]: Subject<A[P]>;
 };
+export type ServiceEvents<E extends Record<string, any>> = {
+  [P in keyof E]: Subject<E[P]>;
+};
 export type ServiceOptions<
   S extends Record<string, any>,
-  A extends Record<string, any>
+  A extends Record<string, any>,
+  E extends Record<string, any>
 > = {
   state?: S;
   actions?: (keyof A)[];
+  events?: (keyof E)[];
 };
 
 // Service 服务基类
 /* 
 type State = {
   user: User | null;
-  message: any;
 }
 type Actions = {
   login: LoginParams;
   logout: undefined;
 };
-class AppService extends Service<State, Actions> {
+type Events = {
+  message: any;
+}
+class AppService extends Service<State, Actions, Events> {
   constructor() {
     super({
       state: {
         user: null
       },
-      actions: ['login', 'logout']
+      actions: ['login', 'logout'],
+      events: ['message']
     })
 
     // listen actions
@@ -48,20 +56,25 @@ class AppService extends Service<State, Actions> {
     )
 
     // send notifies
-    this.$$.message.next('init');
+    this.$e.message.next('init');
   }
 } 
 */
 export default class Service<
-  S extends Record<string, any> = Record<string, any>,
-  A extends Record<string, any> = Record<string, any>
-> extends Disposable implements InjectionClass {
+    S extends Record<string, any> = {},
+    A extends Record<string, any> = {},
+    E extends Record<string, any> = {}
+  >
+  extends Disposable
+  implements InjectionClass {
   // displayName, for debug
   displayName = '';
-  // notify sources
-  $$: ServiceSources<S> = {} as ServiceSources<S>;
+  // state
+  $$: ServiceState<S> = {} as ServiceState<S>;
   // actions
   $: ServiceActions<A> = {} as ServiceActions<A>;
+  // notifies
+  $e: ServiceEvents<E> = {} as ServiceEvents<E>;
   // state
   get state(): S {
     const state = {} as S;
@@ -74,7 +87,7 @@ export default class Service<
     return state;
   }
 
-  constructor(args: ServiceOptions<S, A> = {}) {
+  constructor(args: ServiceOptions<S, A, E> = {}) {
     super();
 
     // init state
@@ -86,6 +99,11 @@ export default class Service<
     const actions = args.actions || [];
     actions.forEach((key) => {
       this.$[key] = new Subject<A[typeof key]>();
+    });
+    // init events
+    const events = args.events || [];
+    events.forEach((key) => {
+      this.$e[key] = new Subject<E[typeof key]>();
     });
 
     // debug
@@ -107,6 +125,18 @@ export default class Service<
         next: (v: any) => {
           debug(
             `[Service ${this.displayName}]: receive new action [${key}].`,
+            'info'
+          );
+          debug(v, 'info');
+        }
+      });
+    });
+    // debugs: new event
+    Object.keys(this.$e).forEach((key) => {
+      this.subscribe(this.$e[key], {
+        next: (v: any) => {
+          debug(
+            `[Service ${this.displayName}]: emit new event [${key}].`,
             'info'
           );
           debug(v, 'info');

@@ -1,6 +1,6 @@
 {
   "name": "@reactive-service/core",
-  "version": "0.5.2",
+  "version": "0.6.0",
   "description": "a service tool for react with rxjs",
   "main": "index.js",
   "module": "dist/rs-core.esm-bundler.js",

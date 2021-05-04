@@ -185,19 +185,22 @@ var RSReact = (function (exports, rxjs, React) {
   /*
   type State = {
     user: User | null;
-    message: any;
   }
   type Actions = {
     login: LoginParams;
     logout: undefined;
   };
-  class AppService extends Service<State, Actions> {
+  type Events = {
+    message: any;
+  }
+  class AppService extends Service<State, Actions, Events> {
     constructor() {
       super({
         state: {
           user: null
         },
-        actions: ['login', 'logout']
+        actions: ['login', 'logout'],
+        events: ['message']
       })
 
       // listen actions
@@ -212,7 +215,7 @@ var RSReact = (function (exports, rxjs, React) {
       )
 
       // send notifies
-      this.$$.message.next('init');
+      this.$e.message.next('init');
     }
   }
   */
@@ -221,10 +224,12 @@ var RSReact = (function (exports, rxjs, React) {
           super();
           // displayName, for debug
           this.displayName = '';
-          // notify sources
+          // state
           this.$$ = {};
           // actions
           this.$ = {};
+          // notifies
+          this.$e = {};
           // init state
           const initialState = (args.state || {});
           Object.keys(initialState).forEach((key) => {
@@ -234,6 +239,11 @@ var RSReact = (function (exports, rxjs, React) {
           const actions = args.actions || [];
           actions.forEach((key) => {
               this.$[key] = new rxjs.Subject();
+          });
+          // init events
+          const events = args.events || [];
+          events.forEach((key) => {
+              this.$e[key] = new rxjs.Subject();
           });
           // debug
           // debugs: update state
@@ -250,6 +260,15 @@ var RSReact = (function (exports, rxjs, React) {
               this.subscribe(this.$[key], {
                   next: (v) => {
                       debug(`[Service ${this.displayName}]: receive new action [${key}].`, 'info');
+                      debug(v, 'info');
+                  }
+              });
+          });
+          // debugs: new event
+          Object.keys(this.$e).forEach((key) => {
+              this.subscribe(this.$e[key], {
+                  next: (v) => {
+                      debug(`[Service ${this.displayName}]: emit new event [${key}].`, 'info');
                       debug(v, 'info');
                   }
               });
