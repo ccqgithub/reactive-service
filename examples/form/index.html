@@ -12,86 +12,201 @@
   <script type="application/javascript" src="../../packages/react/dist/rs-react.global.js"></script>
   <script type="application/javascript" src="../../packages/form/dist/rs-form.global.js"></script>
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    .spin {
+      animation: spin 0.5s infinite;
+    }
+
     .form {
       width: 400px;
-      margin: 0 auto;
+      margin: 50px auto;
+    }
+
+    .form-item {
+      display: flex;
+      align-items: center;
+      padding-bottom: 20px;
+    }
+
+    .form-vals {
+      flex: 1 0 auto;
+    }
+
+    .input {
+      width: 100%;
+      display: block;
+      padding: 5px 10px;
+      line-height: 20px;
+      color: #000;
+      border: 1px solid #ddd;
+      outline: none;
+    }
+
+    button {
+      display: flex;
+      width: 100%;
+      height: 30px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .form-err {
+      color: red;
+    }
+
+    .form-item.error .input {
+      color: red;
+      border: 1px solid red;
+    }
+
+    label {
+      width: 100px;
+      flex: 0 0 auto;
     }
   </style>
 </head>
 <body>
   <div id="root"></div>
   <script type="text/babel">
-    const formSchema = {
-      name: {
-        rules: [
-          { type: 'string', required: true }
-        ]
-      },
-      email: {
-        rules: [
-          { type: 'email', required: true }
-        ]
-      }
+    const buildSchema = (data) => {
+      return {
+        name: {
+          ruleValue: data.name,
+          rules: [
+            { type: 'string', required: true }
+          ],
+          reducer: (state, value) => {
+            return {
+              ...state,
+              name: value
+            }
+          }
+        },
+        email: {
+          ruleValue: data.email,
+          rules: [
+            { required: true, type: 'email', message: '请输入邮件' },
+          ],
+          reducer: (state, value) => {
+            return {
+              ...state,
+              email: value
+            }
+          }
+        }
+      };
     };
     const defaultData = {
       name: '',
       email: '',
     };
-    const form = new RSForm.Form(formSchema, defaultData);
+    const form = new RSForm.Form(buildSchema, defaultData);
     const Form = () => {
       const data = RSReact.useBehavior(form.data$$);
       const errors = RSReact.useBehavior(form.errors$$);
       const fields = RSReact.useBehavior(form.fields$$);
+      console.log(fields)
 
+      const calcFieldError = React.useCallback((field) => {
+       const hasError = field.errors.length && field.touched;
+       return hasError ? field.errors[0].message : '';
+      }, []);
+
+      const send = React.useCallback(() => {
+        return new Promise((resolve, reject) => {
+          setTimeout(() => {
+            resolve();
+          }, 2000);
+        });
+      }, []);
+
+      const [submiting, setSubmiting] = React.useState(false);
       const submit = React.useCallback((e) => {
         e.preventDefault();
-        form.validate().then((errors) => {
-          console.log(errors);
-        });
+        setSubmiting(true);
+        form.validate()
+          .then((errors) => {
+            if (errors.length) {
+              throw errors[0];
+            }
+            return send();
+          })
+          .then(() => {
+            setSubmiting(false);
+            alert('success');
+          })
+          .catch((error) => {
+            setSubmiting(false);
+            alert(error.message);
+          });
       }, []);
 
       return (
         <form className="form">
+
+          <div className={`form-item ${calcFieldError(fields.name) ? 'error' : ''}`}>
+            <label>Name:</label>
+            <div className="form-vals">
+              <input
+                className="input"
+                type="text"
+                value={data.name} 
+                onChange={
+                  (e) => {
+                    fields.name.onChange(e.target.value)
+                  }
+                }
+              />  
+              {!!calcFieldError(fields.name) && <div className="form-err">
+                {calcFieldError(fields.name)}  
+              </div>}
+            </div>
+          </div>
+          <div className={`form-item ${calcFieldError(fields.email) ? 'error' : ''}`}>
+            <label>Email:</label>
+            <div className="form-vals">
+              <input
+                className="input"
+                type="text"
+                value={data.email} 
+                onChange={
+                  (e) => {
+                    fields.email.onChange(e.target.value)
+                  }
+                }
+              />
+              {!!calcFieldError(fields.email) && <div className="form-err">
+                {calcFieldError(fields.email)}  
+              </div>}
+            </div>
+          </div>
           <div className="form-item">
             <div>
               {errors.map((error, i) => (
-                <div key={i}>{error.message}</div>
+                <div key={i}>[{error.field}]{error.message}</div>
               ))}  
             </div>
-            <div>
-              {JSON.stringify(fields)}  
+          </div>
+          <div className="form-item">
+            <label></label>
+            <div className="form-vals">
+              <button onClick={submit} disabled={submiting}>
+                {submiting ? <span className="spin">...</span> : <span>提交</span>}  
+              </button>
             </div>
-          </div>
-          <div className="form-item">
-            <label>Name:</label>
-            <input
-              type="text"
-              value={data.name} 
-              onChange={
-                (e) => {
-                  form.update({
-                    name: e.target.value
-                  })
-                }
-              }
-            />
-          </div>
-          <div className="form-item">
-            <label>Email:</label>
-            <input
-              type="text"
-              value={data.email} 
-              onChange={
-                (e) => {
-                  form.update({
-                    email: e.target.value
-                  });
-                }
-              }
-            />
-          </div>
-          <div className="form-item">
-            <button onClick={submit}>提交</button>
           </div>
         </form>
       )

@@ -44,7 +44,7 @@
     "execa": "^1.0.0",
     "fs-extra": "^8.1.0",
     "minimist": "^1.2.5",
-    "prettier": "^1.19.1",
+    "prettier": "^2.2.1",
     "react": "^17.0.2",
     "rollup": "^2.43.1",
     "rollup-plugin-node-polyfills": "^0.2.1",

@@ -1,69 +1,136 @@
+import { BehaviorSubject } from 'rxjs';
 import RSField from './field';
-import { Schema, BuildSchema, RSFormData } from './types';
+import ValidateError from './error';
+import { FieldSchema, BuildFormSchema, RSFormData } from './types';
 
-export default class RSForm<
-  S extends Schema = Schema,
-  D extends RSFormData = RSFormData
-> {
-  private schema: S | BuildSchema<S, D>;
-  private form: RSField<S, D>;
-  dirty = false;
+type RSFormOptions = {
+  validateOnlyFormTouched?: boolean;
+  validateOnFieldTouched?: boolean;
+  firstRuleError?: boolean;
+};
 
-  get data$$() {
-    return this.form.value$$;
-  }
+export default class RSForm<D extends RSFormData = RSFormData> {
+  private buildSchema: BuildFormSchema<D>;
+  private formField: RSField<D>;
+  private disposers: (() => void)[] = [];
+
+  // options
+  options: RSFormOptions;
+  // 表单数据
+  data$$: BehaviorSubject<D>;
+  // 是否提交过
+  touched$$: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
+  // 正在提交
+  validating$$: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
+  // 错误
+  errors$$: BehaviorSubject<ValidateError[]> = new BehaviorSubject<
+    ValidateError[]
+  >([]);
+  // 表单字段
+  fields$$: BehaviorSubject<Record<string, RSField<D>>>;
 
   get data() {
-    return this.form.value;
+    return this.data$$.value;
   }
 
-  get validating$$() {
-    return this.form.validating$$;
+  get touched() {
+    return this.touched$$.value;
   }
 
   get validating() {
-    return this.form.validating;
-  }
-
-  get errors$$() {
-    return this.form.errors$$;
+    return this.validating$$.value;
   }
 
   get errors() {
-    return this.form.errors;
+    return this.errors$$.value;
   }
 
   get fields() {
-    return this.form.fields;
+    return this.fields$$.value;
   }
 
-  constructor(schema: S | BuildSchema<S, D>, data: D) {
-    this.schema = schema;
-    this.form = new RSField<S, D>(this.getFormFieldSchema(data), data, {
+  get canValidate() {
+    return !(!this.touched && this.options.validateOnlyFormTouched);
+  }
+
+  constructor(
+    buildSchema: BuildFormSchema<D>,
+    data: D,
+    options: RSFormOptions = {}
+  ) {
+    const {
+      validateOnlyFormTouched = false,
+      validateOnFieldTouched = false,
+      firstRuleError = true
+    } = options;
+    this.options = {
+      validateOnlyFormTouched,
+      validateOnFieldTouched,
+      firstRuleError
+    };
+    this.buildSchema = buildSchema;
+    this.data$$ = new BehaviorSubject(data);
+    this.formField = new RSField<D>(this.getFormFieldSchema(data), {
       form: this,
-      name: '',
       namePath: '',
       index: ''
     });
+    this.fields$$ = new BehaviorSubject(
+      this.formField.fields as Record<string, RSField<D>>
+    );
   }
 
-  private getFormFieldSchema(data: D) {
-    const { schema } = this;
-    const fields = typeof schema === 'function' ? schema(this.data) : schema;
+  private getFormFieldSchema(data: D): FieldSchema<D> {
+    const { buildSchema } = this;
+    const fields = buildSchema(data);
     return {
-      value: data,
+      ruleValue: data,
       rules: [],
-      fields
+      fields,
+      reducer: (data, v) => v
     };
   }
 
-  update(data: Partial<D>) {
-    const newData =  { ...this.data, ...data };
+  onUpdate(data: Partial<D>) {
+    const newData = { ...this.data, ...data };
     const schema = this.getFormFieldSchema(newData);
-    this.form.update(schema);
+    this.data$$.next(newData);
+    this.formField.updateSchema(schema);
+    this.onChangeStatus();
+    this.formField.checkValidate();
+  }
+
+  onChangeStatus() {
+    const { fieldErrors } = this.formField;
+    this.validating$$.next(this.formField.validating);
+    this.errors$$.next([...fieldErrors]);
+    this.fields$$.next({
+      ...(this.formField.fields as Record<string, RSField<D>>)
+    });
+  }
+
+  reset(data: D) {
+    this.touched$$.next(false);
+    this.data$$.next(data);
+    this.formField = new RSField<D>(this.getFormFieldSchema(data), {
+      form: this,
+      namePath: '',
+      index: ''
+    });
+    this.fields$$.next({
+      ...(this.formField.fields as Record<string, RSField<D>>)
+    });
+    this.errors$$.next([...this.formField.fieldErrors]);
   }
 
   validate() {
-    return this.form.validate();
+    !this.touched && this.touched$$.next(true);
+    return this.formField.validate();
+  }
+
+  dispose() {
+    this.disposers.forEach((disposer) => {
+      disposer();
+    });
   }
 }

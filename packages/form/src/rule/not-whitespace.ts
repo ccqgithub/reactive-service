@@ -1,9 +1,9 @@
 import * as util from '../util';
-import { FieldRule, FieldValue, RSFormData } from '../types';
+import { FieldRule, RSFormData } from '../types';
 
 function notWhitespace(
   rule: FieldRule,
-  value: FieldValue,
+  value: any,
   source: RSFormData,
   options: Record<string, any>
 ): string[] {

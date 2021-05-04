@@ -3,7 +3,7 @@ import ValidateError from './error';
 
 export type RSFormData = Record<string, any>;
 
-export type RSRule = {
+export type FieldRule = {
   type?: string;
   required?: boolean;
   len?: number;
@@ -14,22 +14,25 @@ export type RSRule = {
   notWhitespace?: boolean;
   validator?: Validator;
   message?: string;
+  messages?: Record<string, string>;
 };
-export type RSRuleValue = any;
 
-export type SchemaField<D extends RSFormData = RSFormData> = {
+export type FieldType = {
+  value?: any;
+  fields?: Record<string, FieldType>;
+};
+
+export type FieldSchema<D extends RSFormData = RSFormData> = {
   key?: string;
-  ruleValue: RSRuleValue;
-  rules: RSRule[];
-  fields?: SchemaField[] | Record<string, SchemaField>;
-  reducer: () => void;
+  ruleValue: any;
+  rules: FieldRule[];
+  fields?: FieldSchema<D>[] | Record<string, FieldSchema<D>>;
+  reducer?: (data: D, value: any) => D;
 };
 
-export type Schema = Record<string, SchemaField>;
-export type BuildSchema<
-  S extends Schema = Schema,
-  D extends RSFormData = RSFormData
-> = (data: D) => S;
+export type BuildFormSchema<D extends RSFormData> = (
+  data: D
+) => Record<string, FieldSchema<D>>;
 
 export type FieldErrors = Record<
   string,
@@ -41,7 +44,7 @@ export type FieldErrors = Record<
 
 export type Validator = (
   rule: FieldRule,
-  value: FieldValue,
+  value: any,
   source: RSFormData,
   Options: Record<string, any>
 ) => string[] | Promise<string[]> | Observable<string[]>;

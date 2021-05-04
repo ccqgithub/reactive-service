@@ -1,6 +1,6 @@
 import * as util from '../util';
 import required from './required';
-import { FieldRule, FieldValue, RSFormData } from '../types';
+import { FieldRule, RSFormData } from '../types';
 
 /* eslint max-len:0 */
 
@@ -72,7 +72,7 @@ const types = {
 
 function type(
   rule: FieldRule,
-  value: FieldValue,
+  value: any,
   source: RSFormData,
   options: Record<string, any>
 ): string[] {
@@ -81,8 +81,7 @@ function type(
 
   if (!ruleType) return errors;
 
-  if (value === null || value === undefined) {
-    if (rule.required) return required(rule, value, source, options);
+  if (util.isEmptyValue(value, rule.type)) {
     return errors;
   }
 

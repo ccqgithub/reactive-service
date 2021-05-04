@@ -94,8 +94,8 @@ function createConfig(format, output, plugins = []) {
       virtual({
         'rxjs/operators': `
            import rxjs from 'rxjs'; 
-           const { catchError, concatAll, reduce, switchMap, tap, skip, map } = rxjs.operators;
-           export { catchError, concatAll, reduce, switchMap, tap, skip, map };
+           const { catchError, concatAll, reduce, switchMap, concatMap, takeWhile, tap, skip, map } = rxjs.operators;
+           export { catchError, concatAll, reduce, switchMap, concatMap, takeWhile, tap, skip, map };
         `
       })
     ];

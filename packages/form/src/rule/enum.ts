@@ -1,11 +1,11 @@
 import * as util from '../util';
-import { FieldRule, FieldValue, RSFormData } from '../types';
+import { FieldRule, RSFormData } from '../types';
 
 const ENUM = 'enum';
 
 function enumerable(
   rule: FieldRule,
-  value: FieldValue,
+  value: any,
   source: RSFormData,
   options: Record<string, any>
 ): string[] {

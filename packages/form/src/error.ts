@@ -1,8 +1,8 @@
 export default class ValidateError extends Error {
-  self?: boolean;
+  field: string;
 
-  constructor(message: string, self = false) {
+  constructor(message: string, field: string) {
     super(message);
-    this.self = self;
+    this.field = field;
   }
 }

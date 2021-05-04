@@ -1,6 +1,6 @@
 {
   "name": "@reactive-service/form",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "a service tool for react with rxjs",
   "main": "index.js",
   "module": "dist/rs-form.esm-bundler.js",
