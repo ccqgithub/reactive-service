@@ -1,6 +1,6 @@
 import { Injector } from '@reactive-service/core';
 export * from '@reactive-service/core';
-import React, { createContext, useContext, forwardRef, useState, useCallback, useEffect, useRef } from 'react';
+import React, { createContext, useContext, forwardRef, useState, useCallback, useEffect } from 'react';
 import hoistStatics from 'hoist-non-react-statics';
 import { BehaviorSubject, Subject } from 'rxjs';
 
@@ -129,13 +129,6 @@ function useObservableError(ob$, onlyAfter = false) {
     }, [ob$, onlyAfter]);
     return state;
 }
-function useListenValue(value, listner) {
-    const ref = useRef(listner);
-    ref.current = listner;
-    useEffect(() => {
-        ref.current(value);
-    }, [value]);
-}
 function useSubscribe(ob$, args) {
     const argsRef = useValueRef(args);
     useEffect(() => {
@@ -146,4 +139,4 @@ function useSubscribe(ob$, args) {
     }, [ob$, argsRef]);
 }
 
-export { ServiceConsumer, ServiceInjector, useBehavior, useGetService, useListenValue, useObservable, useObservableError, useRSRef, useService, useSubscribe, useValueRef, withInjector };
+export { ServiceConsumer, ServiceInjector, useBehavior, useGetService, useObservable, useObservableError, useRSRef, useService, useSubscribe, useValueRef, withInjector };

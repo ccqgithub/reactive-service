@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useState } from 'react';
 import { Subject, BehaviorSubject, Observable } from 'rxjs';
 import { GetService } from '@reactive-service/core';
 import { InjectorContext } from './context';
@@ -111,18 +111,6 @@ export function useObservableError<T = any>(
   }, [ob$, onlyAfter]);
 
   return state;
-}
-
-export function useListenValue<T = any>(
-  value: T,
-  listner: (arg: T) => void
-): void {
-  const ref = useRef(listner);
-  ref.current = listner;
-
-  useEffect(() => {
-    ref.current(value);
-  }, [value]);
 }
 
 export function useSubscribe<T = any>(

@@ -30,8 +30,6 @@ export declare function useBehavior<T = any>(ob$: BehaviorSubject<T>): T;
 
 export declare function useGetService(): GetService;
 
-export declare function useListenValue<T = any>(value: T, listner: (arg: T) => void): void;
-
 export declare function useObservable<T = any>(ob$: Observable<T>, defaultValue: T): T;
 
 export declare function useObservableError<T = any>(ob$: Observable<T>, onlyAfter?: boolean): any;

@@ -8,7 +8,6 @@ export {
   useService,
   useBehavior,
   useGetService,
-  useListenValue,
   useObservableError,
   useObservable,
   useSubscribe

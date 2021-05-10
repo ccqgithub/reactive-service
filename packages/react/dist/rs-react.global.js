@@ -712,13 +712,6 @@ var RSReact = (function (exports, rxjs, React) {
       }, [ob$, onlyAfter]);
       return state;
   }
-  function useListenValue(value, listner) {
-      const ref = React.useRef(listner);
-      ref.current = listner;
-      React.useEffect(() => {
-          ref.current(value);
-      }, [value]);
-  }
   function useSubscribe(ob$, args) {
       const argsRef = useValueRef(args);
       React.useEffect(() => {
@@ -740,7 +733,6 @@ var RSReact = (function (exports, rxjs, React) {
   exports.empty = empty;
   exports.useBehavior = useBehavior;
   exports.useGetService = useGetService;
-  exports.useListenValue = useListenValue;
   exports.useObservable = useObservable;
   exports.useObservableError = useObservableError;
   exports.useRSRef = useRSRef;

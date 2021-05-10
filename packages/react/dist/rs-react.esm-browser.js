@@ -1,5 +1,5 @@
 import { BehaviorSubject, Subject } from 'rxjs';
-import React, { createContext, useContext, forwardRef, useState, useCallback, useEffect, useRef } from 'react';
+import React, { createContext, useContext, forwardRef, useState, useCallback, useEffect } from 'react';
 
 const configSettings = {
     logLevel: 'info' ,
@@ -708,13 +708,6 @@ function useObservableError(ob$, onlyAfter = false) {
     }, [ob$, onlyAfter]);
     return state;
 }
-function useListenValue(value, listner) {
-    const ref = useRef(listner);
-    ref.current = listner;
-    useEffect(() => {
-        ref.current(value);
-    }, [value]);
-}
 function useSubscribe(ob$, args) {
     const argsRef = useValueRef(args);
     useEffect(() => {
@@ -725,4 +718,4 @@ function useSubscribe(ob$, args) {
     }, [ob$, argsRef]);
 }
 
-export { Disposable, InjectionToken, Injector, Service, ServiceConsumer, ServiceInjector, config, debug, empty, useBehavior, useGetService, useListenValue, useObservable, useObservableError, useRSRef, useService, useSubscribe, useValueRef, withInjector };
+export { Disposable, InjectionToken, Injector, Service, ServiceConsumer, ServiceInjector, config, debug, empty, useBehavior, useGetService, useObservable, useObservableError, useRSRef, useService, useSubscribe, useValueRef, withInjector };
