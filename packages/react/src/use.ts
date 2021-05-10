@@ -4,7 +4,7 @@ import { GetService } from '@reactive-service/core';
 import { InjectorContext } from './context';
 import { RSRefObject } from './types';
 
-export function useRSRef<T = any>(value: T): RSRefObject<T> {
+export const useRSRef = <T = any>(value: T): RSRefObject<T> => {
   const [state, setState] = useState(value);
   const [resRef] = useState<RSRefObject>(() => {
     return {
@@ -21,9 +21,9 @@ export function useRSRef<T = any>(value: T): RSRefObject<T> {
   resRef.state = state;
   resRef.setState = setState;
   return resRef;
-}
+};
 
-export function useValueRef<T = any>(value: T): RSRefObject<T> {
+export const useValueRef = <T = any>(value: T): RSRefObject<T> => {
   const [resRef] = useState<RSRefObject>(() => {
     return {
       state: value,
@@ -37,9 +37,9 @@ export function useValueRef<T = any>(value: T): RSRefObject<T> {
   });
   resRef.state = value;
   return resRef;
-}
+};
 
-export function useGetService(): GetService {
+export const useGetService = (): GetService => {
   const provider = useContext(InjectorContext);
   const getService: GetService = useCallback(
     (provide: any, opts: any) => {
@@ -48,7 +48,7 @@ export function useGetService(): GetService {
     [provider]
   );
   return getService;
-}
+};
 
 export const useService: GetService = (provide: any, opts: any) => {
   const getService = useGetService();
@@ -57,7 +57,10 @@ export const useService: GetService = (provide: any, opts: any) => {
   return service;
 };
 
-export function useObservable<T = any>(ob$: Observable<T>, defaultValue: T): T {
+export const useObservable = <T = any>(
+  ob$: Observable<T>,
+  defaultValue: T
+): T => {
   const [state, setState] = useState(defaultValue);
 
   useEffect(() => {
@@ -70,9 +73,9 @@ export function useObservable<T = any>(ob$: Observable<T>, defaultValue: T): T {
   }, [ob$]);
 
   return state;
-}
+};
 
-export function useBehavior<T = any>(ob$: BehaviorSubject<T>): T {
+export const useBehavior = <T = any>(ob$: BehaviorSubject<T>): T => {
   if (!(ob$ instanceof BehaviorSubject)) {
     throw new Error(`The useBehaviorState can only use with BehaviorSubject!`);
   }
@@ -89,12 +92,12 @@ export function useBehavior<T = any>(ob$: BehaviorSubject<T>): T {
   }, [ob$]);
 
   return state;
-}
+};
 
-export function useObservableError<T = any>(
+export const useObservableError = <T = any>(
   ob$: Observable<T>,
   onlyAfter = false
-): any {
+): any => {
   const [state, setState] = useState(null);
 
   useEffect(() => {
@@ -111,16 +114,16 @@ export function useObservableError<T = any>(
   }, [ob$, onlyAfter]);
 
   return state;
-}
+};
 
-export function useSubscribe<T = any>(
+export const useSubscribe = <T = any>(
   ob$: Observable<T>,
   args: {
     next?: (p: T) => void;
     error?: (err: any) => void;
     complete?: () => void;
   }
-) {
+) => {
   const argsRef = useValueRef(args);
   useEffect(() => {
     const subscription = ob$.subscribe(
@@ -132,4 +135,4 @@ export function useSubscribe<T = any>(
       subscription.unsubscribe();
     };
   }, [ob$, argsRef]);
-}
+};

@@ -589,9 +589,17 @@ var RSReact = (function (exports, rxjs, React) {
 
   const InjectorContext = React.createContext(new Injector());
   const ServiceInjector = (props) => {
+      const isFirst = React.useRef(true);
       const parentInjector = React.useContext(InjectorContext);
       const { providers = [], children } = props;
-      const injector = new Injector(providers, parentInjector);
+      const [injector, setInjector] = React.useState(() => new Injector(providers, parentInjector));
+      React.useEffect(() => {
+          if (isFirst.current)
+              return;
+          const injector = new Injector(providers, parentInjector);
+          setInjector(injector);
+      }, [providers, parentInjector]);
+      isFirst.current = false;
       return (React__default.createElement(InjectorContext.Provider, { value: injector }, children));
   };
   const ServiceConsumer = (props) => {
@@ -623,7 +631,7 @@ var RSReact = (function (exports, rxjs, React) {
       };
   };
 
-  function useRSRef(value) {
+  const useRSRef = (value) => {
       const [state, setState] = React.useState(value);
       const [resRef] = React.useState(() => {
           return {
@@ -640,8 +648,8 @@ var RSReact = (function (exports, rxjs, React) {
       resRef.state = state;
       resRef.setState = setState;
       return resRef;
-  }
-  function useValueRef(value) {
+  };
+  const useValueRef = (value) => {
       const [resRef] = React.useState(() => {
           return {
               state: value,
@@ -655,20 +663,20 @@ var RSReact = (function (exports, rxjs, React) {
       });
       resRef.state = value;
       return resRef;
-  }
-  function useGetService() {
+  };
+  const useGetService = () => {
       const provider = React.useContext(InjectorContext);
       const getService = React.useCallback((provide, opts) => {
           return provider.get(provide, opts);
       }, [provider]);
       return getService;
-  }
+  };
   const useService = (provide, opts) => {
       const getService = useGetService();
       const service = getService(provide, opts);
       return service;
   };
-  function useObservable(ob$, defaultValue) {
+  const useObservable = (ob$, defaultValue) => {
       const [state, setState] = React.useState(defaultValue);
       React.useEffect(() => {
           const subscription = ob$.subscribe({
@@ -679,8 +687,8 @@ var RSReact = (function (exports, rxjs, React) {
           };
       }, [ob$]);
       return state;
-  }
-  function useBehavior(ob$) {
+  };
+  const useBehavior = (ob$) => {
       if (!(ob$ instanceof rxjs.BehaviorSubject)) {
           throw new Error(`The useBehaviorState can only use with BehaviorSubject!`);
       }
@@ -694,8 +702,8 @@ var RSReact = (function (exports, rxjs, React) {
           };
       }, [ob$]);
       return state;
-  }
-  function useObservableError(ob$, onlyAfter = false) {
+  };
+  const useObservableError = (ob$, onlyAfter = false) => {
       const [state, setState] = React.useState(null);
       React.useEffect(() => {
           const ignore = ob$ instanceof rxjs.Subject && onlyAfter && ob$.hasError;
@@ -711,8 +719,8 @@ var RSReact = (function (exports, rxjs, React) {
           };
       }, [ob$, onlyAfter]);
       return state;
-  }
-  function useSubscribe(ob$, args) {
+  };
+  const useSubscribe = (ob$, args) => {
       const argsRef = useValueRef(args);
       React.useEffect(() => {
           const subscription = ob$.subscribe((v) => argsRef.current.next && argsRef.current.next(v), (err) => argsRef.current.error && argsRef.current.error(err), () => argsRef.current.complete && argsRef.current.complete());
@@ -720,7 +728,7 @@ var RSReact = (function (exports, rxjs, React) {
               subscription.unsubscribe();
           };
       }, [ob$, argsRef]);
-  }
+  };
 
   exports.Disposable = Disposable;
   exports.InjectionToken = InjectionToken;

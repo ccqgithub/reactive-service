@@ -1,5 +1,5 @@
 import { BehaviorSubject, Subject } from 'rxjs';
-import React, { createContext, useContext, forwardRef, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useRef, useContext, useState, useEffect, forwardRef, useCallback } from 'react';
 
 const configSettings = {
     logLevel: 'info' ,
@@ -585,9 +585,17 @@ var hoistNonReactStatics_cjs = hoistNonReactStatics;
 
 const InjectorContext = createContext(new Injector());
 const ServiceInjector = (props) => {
+    const isFirst = useRef(true);
     const parentInjector = useContext(InjectorContext);
     const { providers = [], children } = props;
-    const injector = new Injector(providers, parentInjector);
+    const [injector, setInjector] = useState(() => new Injector(providers, parentInjector));
+    useEffect(() => {
+        if (isFirst.current)
+            return;
+        const injector = new Injector(providers, parentInjector);
+        setInjector(injector);
+    }, [providers, parentInjector]);
+    isFirst.current = false;
     return (React.createElement(InjectorContext.Provider, { value: injector }, children));
 };
 const ServiceConsumer = (props) => {
@@ -619,7 +627,7 @@ const withInjector = (args) => {
     };
 };
 
-function useRSRef(value) {
+const useRSRef = (value) => {
     const [state, setState] = useState(value);
     const [resRef] = useState(() => {
         return {
@@ -636,8 +644,8 @@ function useRSRef(value) {
     resRef.state = state;
     resRef.setState = setState;
     return resRef;
-}
-function useValueRef(value) {
+};
+const useValueRef = (value) => {
     const [resRef] = useState(() => {
         return {
             state: value,
@@ -651,20 +659,20 @@ function useValueRef(value) {
     });
     resRef.state = value;
     return resRef;
-}
-function useGetService() {
+};
+const useGetService = () => {
     const provider = useContext(InjectorContext);
     const getService = useCallback((provide, opts) => {
         return provider.get(provide, opts);
     }, [provider]);
     return getService;
-}
+};
 const useService = (provide, opts) => {
     const getService = useGetService();
     const service = getService(provide, opts);
     return service;
 };
-function useObservable(ob$, defaultValue) {
+const useObservable = (ob$, defaultValue) => {
     const [state, setState] = useState(defaultValue);
     useEffect(() => {
         const subscription = ob$.subscribe({
@@ -675,8 +683,8 @@ function useObservable(ob$, defaultValue) {
         };
     }, [ob$]);
     return state;
-}
-function useBehavior(ob$) {
+};
+const useBehavior = (ob$) => {
     if (!(ob$ instanceof BehaviorSubject)) {
         throw new Error(`The useBehaviorState can only use with BehaviorSubject!`);
     }
@@ -690,8 +698,8 @@ function useBehavior(ob$) {
         };
     }, [ob$]);
     return state;
-}
-function useObservableError(ob$, onlyAfter = false) {
+};
+const useObservableError = (ob$, onlyAfter = false) => {
     const [state, setState] = useState(null);
     useEffect(() => {
         const ignore = ob$ instanceof Subject && onlyAfter && ob$.hasError;
@@ -707,8 +715,8 @@ function useObservableError(ob$, onlyAfter = false) {
         };
     }, [ob$, onlyAfter]);
     return state;
-}
-function useSubscribe(ob$, args) {
+};
+const useSubscribe = (ob$, args) => {
     const argsRef = useValueRef(args);
     useEffect(() => {
         const subscription = ob$.subscribe((v) => argsRef.current.next && argsRef.current.next(v), (err) => argsRef.current.error && argsRef.current.error(err), () => argsRef.current.complete && argsRef.current.complete());
@@ -716,6 +724,6 @@ function useSubscribe(ob$, args) {
             subscription.unsubscribe();
         };
     }, [ob$, argsRef]);
-}
+};
 
 export { Disposable, InjectionToken, Injector, Service, ServiceConsumer, ServiceInjector, config, debug, empty, useBehavior, useGetService, useObservable, useObservableError, useRSRef, useService, useSubscribe, useValueRef, withInjector };

@@ -14,9 +14,17 @@ var hoistStatics__default = /*#__PURE__*/_interopDefaultLegacy(hoistStatics);
 
 const InjectorContext = React.createContext(new core.Injector());
 const ServiceInjector = (props) => {
+    const isFirst = React.useRef(true);
     const parentInjector = React.useContext(InjectorContext);
     const { providers = [], children } = props;
-    const injector = new core.Injector(providers, parentInjector);
+    const [injector, setInjector] = React.useState(() => new core.Injector(providers, parentInjector));
+    React.useEffect(() => {
+        if (isFirst.current)
+            return;
+        const injector = new core.Injector(providers, parentInjector);
+        setInjector(injector);
+    }, [providers, parentInjector]);
+    isFirst.current = false;
     return (React__default.createElement(InjectorContext.Provider, { value: injector }, children));
 };
 const ServiceConsumer = (props) => {
@@ -48,7 +56,7 @@ const withInjector = (args) => {
     };
 };
 
-function useRSRef(value) {
+const useRSRef = (value) => {
     const [state, setState] = React.useState(value);
     const [resRef] = React.useState(() => {
         return {
@@ -65,8 +73,8 @@ function useRSRef(value) {
     resRef.state = state;
     resRef.setState = setState;
     return resRef;
-}
-function useValueRef(value) {
+};
+const useValueRef = (value) => {
     const [resRef] = React.useState(() => {
         return {
             state: value,
@@ -80,20 +88,20 @@ function useValueRef(value) {
     });
     resRef.state = value;
     return resRef;
-}
-function useGetService() {
+};
+const useGetService = () => {
     const provider = React.useContext(InjectorContext);
     const getService = React.useCallback((provide, opts) => {
         return provider.get(provide, opts);
     }, [provider]);
     return getService;
-}
+};
 const useService = (provide, opts) => {
     const getService = useGetService();
     const service = getService(provide, opts);
     return service;
 };
-function useObservable(ob$, defaultValue) {
+const useObservable = (ob$, defaultValue) => {
     const [state, setState] = React.useState(defaultValue);
     React.useEffect(() => {
         const subscription = ob$.subscribe({
@@ -104,8 +112,8 @@ function useObservable(ob$, defaultValue) {
         };
     }, [ob$]);
     return state;
-}
-function useBehavior(ob$) {
+};
+const useBehavior = (ob$) => {
     if (!(ob$ instanceof rxjs.BehaviorSubject)) {
         throw new Error(`The useBehaviorState can only use with BehaviorSubject!`);
     }
@@ -119,8 +127,8 @@ function useBehavior(ob$) {
         };
     }, [ob$]);
     return state;
-}
-function useObservableError(ob$, onlyAfter = false) {
+};
+const useObservableError = (ob$, onlyAfter = false) => {
     const [state, setState] = React.useState(null);
     React.useEffect(() => {
         const ignore = ob$ instanceof rxjs.Subject && onlyAfter && ob$.hasError;
@@ -136,8 +144,8 @@ function useObservableError(ob$, onlyAfter = false) {
         };
     }, [ob$, onlyAfter]);
     return state;
-}
-function useSubscribe(ob$, args) {
+};
+const useSubscribe = (ob$, args) => {
     const argsRef = useValueRef(args);
     React.useEffect(() => {
         const subscription = ob$.subscribe((v) => argsRef.current.next && argsRef.current.next(v), (err) => argsRef.current.error && argsRef.current.error(err), () => argsRef.current.complete && argsRef.current.complete());
@@ -145,7 +153,7 @@ function useSubscribe(ob$, args) {
             subscription.unsubscribe();
         };
     }, [ob$, argsRef]);
-}
+};
 
 exports.ServiceConsumer = ServiceConsumer;
 exports.ServiceInjector = ServiceInjector;

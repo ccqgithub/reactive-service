@@ -5,10 +5,10 @@ export { ServiceInjector, ServiceConsumer } from './context';
 export {
   useRSRef,
   useValueRef,
-  useService,
-  useBehavior,
   useGetService,
-  useObservableError,
+  useService,
   useObservable,
+  useBehavior,
+  useObservableError,
   useSubscribe
 } from './use';

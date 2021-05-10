@@ -26,25 +26,25 @@ export declare type ServiceInjectorProps = {
     children: React_2.ReactNode;
 };
 
-export declare function useBehavior<T = any>(ob$: BehaviorSubject<T>): T;
+export declare const useBehavior: <T = any>(ob$: BehaviorSubject<T>) => T;
 
-export declare function useGetService(): GetService;
+export declare const useGetService: () => GetService;
 
-export declare function useObservable<T = any>(ob$: Observable<T>, defaultValue: T): T;
+export declare const useObservable: <T = any>(ob$: Observable<T>, defaultValue: T) => T;
 
-export declare function useObservableError<T = any>(ob$: Observable<T>, onlyAfter?: boolean): any;
+export declare const useObservableError: <T = any>(ob$: Observable<T>, onlyAfter?: boolean) => any;
 
-export declare function useRSRef<T = any>(value: T): RSRefObject<T>;
+export declare const useRSRef: <T = any>(value: T) => RSRefObject<T>;
 
 export declare const useService: GetService;
 
-export declare function useSubscribe<T = any>(ob$: Observable<T>, args: {
-    next?: (p: T) => void;
-    error?: (err: any) => void;
-    complete?: () => void;
-}): void;
+export declare const useSubscribe: <T = any>(ob$: Observable<T>, args: {
+    next?: ((p: T) => void) | undefined;
+    error?: ((err: any) => void) | undefined;
+    complete?: (() => void) | undefined;
+}) => void;
 
-export declare function useValueRef<T = any>(value: T): RSRefObject<T>;
+export declare const useValueRef: <T = any>(value: T) => RSRefObject<T>;
 
 export declare const withInjector: (args: {
     providers: InjectionProvider[];
