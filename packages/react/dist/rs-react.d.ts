@@ -5,12 +5,6 @@ import { InjectionProvider } from '@reactive-service/core';
 import { Observable } from 'rxjs';
 import { default as React_2 } from 'react';
 
-export declare type RSRefObject<T = any> = {
-    state: T;
-    setState?: React_2.Dispatch<React_2.SetStateAction<T>>;
-    current: T;
-};
-
 export declare const ServiceConsumer: (props: ServiceConsumerProps) => React_2.ReactNode;
 
 export declare type ServiceConsumerProps = {
@@ -34,8 +28,6 @@ export declare const useObservable: <T = any>(ob$: Observable<T>, defaultValue: 
 
 export declare const useObservableError: <T = any>(ob$: Observable<T>, onlyAfter?: boolean) => any;
 
-export declare const useRSRef: <T = any>(value: T) => RSRefObject<T>;
-
 export declare const useService: GetService;
 
 export declare const useSubscribe: <T = any>(ob$: Observable<T>, args: {
@@ -43,8 +35,6 @@ export declare const useSubscribe: <T = any>(ob$: Observable<T>, args: {
     error?: ((err: any) => void) | undefined;
     complete?: (() => void) | undefined;
 }) => void;
-
-export declare const useValueRef: <T = any>(value: T) => RSRefObject<T>;
 
 export declare const withInjector: (args: {
     providers: InjectionProvider[];

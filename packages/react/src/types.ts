@@ -11,9 +11,3 @@ export type ServiceConsumerProps = {
     | ((arg: { getService: GetService }) => React.ReactNode)
     | React.ReactNode;
 };
-
-export type RSRefObject<T = any> = {
-  state: T;
-  setState?: React.Dispatch<React.SetStateAction<T>>;
-  current: T;
-};

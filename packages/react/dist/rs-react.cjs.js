@@ -14,17 +14,19 @@ var hoistStatics__default = /*#__PURE__*/_interopDefaultLegacy(hoistStatics);
 
 const InjectorContext = React.createContext(new core.Injector());
 const ServiceInjector = (props) => {
-    const isFirst = React.useRef(true);
+    const isFirstRef = React.useRef(true);
     const parentInjector = React.useContext(InjectorContext);
     const { providers = [], children } = props;
     const [injector, setInjector] = React.useState(() => new core.Injector(providers, parentInjector));
     React.useEffect(() => {
-        if (isFirst.current)
+        if (isFirstRef.current) {
+            isFirstRef.current = false;
             return;
+        }
         const injector = new core.Injector(providers, parentInjector);
         setInjector(injector);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [providers, parentInjector]);
-    isFirst.current = false;
     return (React__default.createElement(InjectorContext.Provider, { value: injector }, children));
 };
 const ServiceConsumer = (props) => {
@@ -56,39 +58,6 @@ const withInjector = (args) => {
     };
 };
 
-const useRSRef = (value) => {
-    const [state, setState] = React.useState(value);
-    const [resRef] = React.useState(() => {
-        return {
-            state,
-            setState,
-            get current() {
-                return this.state;
-            },
-            set current(v) {
-                this.setState && this.setState(v);
-            }
-        };
-    });
-    resRef.state = state;
-    resRef.setState = setState;
-    return resRef;
-};
-const useValueRef = (value) => {
-    const [resRef] = React.useState(() => {
-        return {
-            state: value,
-            get current() {
-                return this.state;
-            },
-            set current(v) {
-                throw new Error(`Can not set value to this ref of useValueRef!`);
-            }
-        };
-    });
-    resRef.state = value;
-    return resRef;
-};
 const useGetService = () => {
     const provider = React.useContext(InjectorContext);
     const getService = React.useCallback((provide, opts) => {
@@ -146,7 +115,8 @@ const useObservableError = (ob$, onlyAfter = false) => {
     return state;
 };
 const useSubscribe = (ob$, args) => {
-    const argsRef = useValueRef(args);
+    const argsRef = React.useRef(args);
+    argsRef.current = args;
     React.useEffect(() => {
         const subscription = ob$.subscribe((v) => argsRef.current.next && argsRef.current.next(v), (err) => argsRef.current.error && argsRef.current.error(err), () => argsRef.current.complete && argsRef.current.complete());
         return () => {
@@ -161,10 +131,8 @@ exports.useBehavior = useBehavior;
 exports.useGetService = useGetService;
 exports.useObservable = useObservable;
 exports.useObservableError = useObservableError;
-exports.useRSRef = useRSRef;
 exports.useService = useService;
 exports.useSubscribe = useSubscribe;
-exports.useValueRef = useValueRef;
 exports.withInjector = withInjector;
 Object.keys(core).forEach(function (k) {
   if (k !== 'default' && !exports.hasOwnProperty(k)) exports[k] = core[k];

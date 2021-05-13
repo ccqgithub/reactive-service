@@ -6,17 +6,19 @@ import { BehaviorSubject, Subject } from 'rxjs';
 
 const InjectorContext = createContext(new Injector());
 const ServiceInjector = (props) => {
-    const isFirst = useRef(true);
+    const isFirstRef = useRef(true);
     const parentInjector = useContext(InjectorContext);
     const { providers = [], children } = props;
     const [injector, setInjector] = useState(() => new Injector(providers, parentInjector));
     useEffect(() => {
-        if (isFirst.current)
+        if (isFirstRef.current) {
+            isFirstRef.current = false;
             return;
+        }
         const injector = new Injector(providers, parentInjector);
         setInjector(injector);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [providers, parentInjector]);
-    isFirst.current = false;
     return (React.createElement(InjectorContext.Provider, { value: injector }, children));
 };
 const ServiceConsumer = (props) => {
@@ -48,39 +50,6 @@ const withInjector = (args) => {
     };
 };
 
-const useRSRef = (value) => {
-    const [state, setState] = useState(value);
-    const [resRef] = useState(() => {
-        return {
-            state,
-            setState,
-            get current() {
-                return this.state;
-            },
-            set current(v) {
-                this.setState && this.setState(v);
-            }
-        };
-    });
-    resRef.state = state;
-    resRef.setState = setState;
-    return resRef;
-};
-const useValueRef = (value) => {
-    const [resRef] = useState(() => {
-        return {
-            state: value,
-            get current() {
-                return this.state;
-            },
-            set current(v) {
-                throw new Error(`Can not set value to this ref of useValueRef!`);
-            }
-        };
-    });
-    resRef.state = value;
-    return resRef;
-};
 const useGetService = () => {
     const provider = useContext(InjectorContext);
     const getService = useCallback((provide, opts) => {
@@ -138,7 +107,8 @@ const useObservableError = (ob$, onlyAfter = false) => {
     return state;
 };
 const useSubscribe = (ob$, args) => {
-    const argsRef = useValueRef(args);
+    const argsRef = useRef(args);
+    argsRef.current = args;
     useEffect(() => {
         const subscription = ob$.subscribe((v) => argsRef.current.next && argsRef.current.next(v), (err) => argsRef.current.error && argsRef.current.error(err), () => argsRef.current.complete && argsRef.current.complete());
         return () => {
@@ -147,4 +117,4 @@ const useSubscribe = (ob$, args) => {
     }, [ob$, argsRef]);
 };
 
-export { ServiceConsumer, ServiceInjector, useBehavior, useGetService, useObservable, useObservableError, useRSRef, useService, useSubscribe, useValueRef, withInjector };
+export { ServiceConsumer, ServiceInjector, useBehavior, useGetService, useObservable, useObservableError, useService, useSubscribe, withInjector };

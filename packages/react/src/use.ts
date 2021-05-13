@@ -1,43 +1,7 @@
-import { useCallback, useContext, useEffect, useState } from 'react';
+import { useCallback, useContext, useEffect, useState, useRef } from 'react';
 import { Subject, BehaviorSubject, Observable } from 'rxjs';
 import { GetService } from '@reactive-service/core';
 import { InjectorContext } from './context';
-import { RSRefObject } from './types';
-
-export const useRSRef = <T = any>(value: T): RSRefObject<T> => {
-  const [state, setState] = useState(value);
-  const [resRef] = useState<RSRefObject>(() => {
-    return {
-      state,
-      setState,
-      get current() {
-        return this.state;
-      },
-      set current(v) {
-        this.setState && this.setState(v);
-      }
-    };
-  });
-  resRef.state = state;
-  resRef.setState = setState;
-  return resRef;
-};
-
-export const useValueRef = <T = any>(value: T): RSRefObject<T> => {
-  const [resRef] = useState<RSRefObject>(() => {
-    return {
-      state: value,
-      get current() {
-        return this.state;
-      },
-      set current(v) {
-        throw new Error(`Can not set value to this ref of useValueRef!`);
-      }
-    };
-  });
-  resRef.state = value;
-  return resRef;
-};
 
 export const useGetService = (): GetService => {
   const provider = useContext(InjectorContext);
@@ -124,7 +88,9 @@ export const useSubscribe = <T = any>(
     complete?: () => void;
   }
 ) => {
-  const argsRef = useValueRef(args);
+  const argsRef = useRef(args);
+  argsRef.current = args;
+
   useEffect(() => {
     const subscription = ob$.subscribe(
       (v) => argsRef.current.next && argsRef.current.next(v),

@@ -11,7 +11,7 @@ import { ServiceInjectorProps, ServiceConsumerProps } from './types';
 const InjectorContext = createContext<Injector>(new Injector());
 
 const ServiceInjector = (props: ServiceInjectorProps): React.ReactElement => {
-  const isFirst = useRef(true);
+  const isFirstRef = useRef(true);
   const parentInjector = useContext(InjectorContext);
   const { providers = [], children } = props;
   const [injector, setInjector] = useState(
@@ -19,12 +19,14 @@ const ServiceInjector = (props: ServiceInjectorProps): React.ReactElement => {
   );
 
   useEffect(() => {
-    if (isFirst.current) return;
+    if (isFirstRef.current) {
+      isFirstRef.current = false;
+      return;
+    }
     const injector = new Injector(providers, parentInjector);
     setInjector(injector);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [providers, parentInjector]);
-
-  isFirst.current = false;
 
   return (
     <InjectorContext.Provider value={injector}>
