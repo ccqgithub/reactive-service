@@ -431,9 +431,9 @@ function App() {
 - `service.$e`: events集合。
 - `service.$`: actions集合。
 
-更多详细信息，请看[apis]();
+更多详细信息，请看[apis](./api.md);
 
-## 第七步：service的组织、安装、与卸载。
+## 第七步：service的组织、安装、与卸载
 
 一些很简单的组件和项目，可能没必要用到我们介绍的service，或者一个service整个应用使用就够了。
 
@@ -441,4 +441,4 @@ function App() {
 
 一个service应该在何处安装，在何处卸载，在组件之间怎么共享？
 
-这部分功能请阅读[依赖注入]()章节。
+这部分功能请阅读[依赖注入](./di.md)章节。

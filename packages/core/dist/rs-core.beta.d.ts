@@ -5,7 +5,7 @@ import { Subject } from 'rxjs';
 
 export declare const config: (args: Partial<ConfigArgs>) => void;
 
-declare type ConfigArgs = {
+export declare type ConfigArgs = {
     logLevel: LogLevel;
     log: LogFunction;
 };
@@ -18,7 +18,7 @@ export declare class Disposable {
     dispose(): void;
 }
 
-declare type Disposer = () => void;
+export declare type Disposer = () => void;
 
 export declare interface GetService {
     <P extends InjectionProvide>(provide: P, opts: {
@@ -86,11 +86,11 @@ export declare class Injector {
     dispose(): void;
 }
 
-declare type LogFunction = (msg: any, type: LogType) => void;
+export declare type LogFunction = (msg: any, type: LogType) => void;
 
-declare type LogLevel = 'info' | 'warn' | 'error' | 'never';
+export declare type LogLevel = 'info' | 'warn' | 'error' | 'never';
 
-declare type LogType = 'info' | 'warn' | 'error';
+export declare type LogType = 'info' | 'warn' | 'error';
 
 export declare class Service<S extends Record<string, any> = {}, A extends Record<string, any> = {}, E extends Record<string, any> = {}> extends Disposable implements InjectionClass {
     displayName: string;
@@ -103,21 +103,21 @@ export declare class Service<S extends Record<string, any> = {}, A extends Recor
     subscribe<T = any>(ob: Observable<T>, next?: (value: T) => void, error?: (error: any) => void, complete?: () => void): void;
 }
 
-declare type ServiceActions<A extends Record<string, any>> = {
+export declare type ServiceActions<A extends Record<string, any>> = {
     [P in keyof A]: Subject<A[P]>;
 };
 
-declare type ServiceEvents<E extends Record<string, any>> = {
+export declare type ServiceEvents<E extends Record<string, any>> = {
     [P in keyof E]: Subject<E[P]>;
 };
 
-declare type ServiceOptions<S extends Record<string, any>, A extends Record<string, any>, E extends Record<string, any>> = {
+export declare type ServiceOptions<S extends Record<string, any>, A extends Record<string, any>, E extends Record<string, any>> = {
     state?: S;
     actions?: (keyof A)[];
     events?: (keyof E)[];
 };
 
-declare type ServiceState<S extends Record<string, any>> = {
+export declare type ServiceState<S extends Record<string, any>> = {
     [P in keyof S]: BehaviorSubject<S[P]>;
 };
 

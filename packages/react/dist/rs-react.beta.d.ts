@@ -27,7 +27,9 @@ export declare const useGetService: () => GetService;
 
 export declare const useObservable: <T = any>(ob$: Observable<T>, defaultValue: T) => T;
 
-export declare const useObservableError: <T = any>(ob$: Observable<T>, onlyAfter?: boolean) => any;
+export declare const useObservableError: <T = any>(ob$: Observable<T>, defaultValue?: any, opts?: {
+    onlyAfter: boolean;
+}) => any;
 
 export declare const useService: GetService;
 

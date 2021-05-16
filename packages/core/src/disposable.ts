@@ -1,4 +1,4 @@
-type Disposer = () => void;
+export type Disposer = () => void;
 
 export default class Disposable {
   private $_disposers: Disposer[] = [];

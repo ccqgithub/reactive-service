@@ -1,7 +1,7 @@
-type LogType = 'info' | 'warn' | 'error';
-type LogLevel = 'info' | 'warn' | 'error' | 'never';
-type LogFunction = (msg: any, type: LogType) => void;
-type ConfigArgs = {
+export type LogType = 'info' | 'warn' | 'error';
+export type LogLevel = 'info' | 'warn' | 'error' | 'never';
+export type LogFunction = (msg: any, type: LogType) => void;
+export type ConfigArgs = {
   logLevel: LogLevel;
   log: LogFunction;
 };

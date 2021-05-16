@@ -67,12 +67,13 @@ export const useBehavior = <T = any>(ob$: BehaviorSubject<T>): T => {
 
 export const useObservableError = <T = any>(
   ob$: Observable<T>,
-  onlyAfter = false
+  defaultValue: any = null,
+  opts: { onlyAfter: boolean } = { onlyAfter: true }
 ): any => {
-  const [state, setState] = useState(null);
+  const [state, setState] = useState(defaultValue);
 
   useEffect(() => {
-    const ignore = ob$ instanceof Subject && onlyAfter && ob$.hasError;
+    const ignore = ob$ instanceof Subject && opts.onlyAfter && ob$.hasError;
     if (ignore) return;
     const subscription = ob$.subscribe({
       error: (err) => {
@@ -82,7 +83,7 @@ export const useObservableError = <T = any>(
     return () => {
       subscription.unsubscribe();
     };
-  }, [ob$, onlyAfter]);
+  }, [ob$, opts.onlyAfter]);
 
   return state;
 };

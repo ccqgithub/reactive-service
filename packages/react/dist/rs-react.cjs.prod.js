@@ -97,10 +97,10 @@ const useBehavior = (ob$) => {
     }, [ob$]);
     return state;
 };
-const useObservableError = (ob$, onlyAfter = false) => {
-    const [state, setState] = React.useState(null);
+const useObservableError = (ob$, defaultValue = null, opts = { onlyAfter: true }) => {
+    const [state, setState] = React.useState(defaultValue);
     React.useEffect(() => {
-        const ignore = ob$ instanceof rxjs.Subject && onlyAfter && ob$.hasError;
+        const ignore = ob$ instanceof rxjs.Subject && opts.onlyAfter && ob$.hasError;
         if (ignore)
             return;
         const subscription = ob$.subscribe({
@@ -111,7 +111,7 @@ const useObservableError = (ob$, onlyAfter = false) => {
         return () => {
             subscription.unsubscribe();
         };
-    }, [ob$, onlyAfter]);
+    }, [ob$, opts.onlyAfter]);
     return state;
 };
 function useSubscribe(ob$, next, error, complete) {

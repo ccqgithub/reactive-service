@@ -667,10 +667,10 @@ const useBehavior = (ob$) => {
     }, [ob$]);
     return state;
 };
-const useObservableError = (ob$, onlyAfter = false) => {
-    const [state, setState] = useState(null);
+const useObservableError = (ob$, defaultValue = null, opts = { onlyAfter: true }) => {
+    const [state, setState] = useState(defaultValue);
     useEffect(() => {
-        const ignore = ob$ instanceof Subject && onlyAfter && ob$.hasError;
+        const ignore = ob$ instanceof Subject && opts.onlyAfter && ob$.hasError;
         if (ignore)
             return;
         const subscription = ob$.subscribe({
@@ -681,7 +681,7 @@ const useObservableError = (ob$, onlyAfter = false) => {
         return () => {
             subscription.unsubscribe();
         };
-    }, [ob$, onlyAfter]);
+    }, [ob$, opts.onlyAfter]);
     return state;
 };
 function useSubscribe(ob$, next, error, complete) {

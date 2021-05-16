@@ -20,7 +20,7 @@ npm i @reactive-service/react rxjs
 - [响应式的Service](./service.md)。
 - [依赖注入](./di.md)。
 
-详细的api参见[apis](./apis.md)。
+详细的api参见[apis](./api.md)。
 
 ## 灵感来源
 
