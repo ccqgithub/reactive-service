@@ -20,8 +20,6 @@ export declare class Disposable {
 
 declare type Disposer = () => void;
 
-export declare const empty: unique symbol;
-
 export declare interface GetService {
     <P extends InjectionProvide>(provide: P, opts: {
         optional: true;

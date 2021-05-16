@@ -8,19 +8,17 @@ import { ServiceInjector } from './context';
 const WrrappedComponent = () => {};
 export default withInjector({
   providers: []
-}) 
+})(WrrappedComponent);
 */
 const withInjector = (args: { providers: InjectionProvider[] }) => {
-  return <P extends Record<string, any>>(
-    Component: React.ComponentType<P>
-  ): ReturnType<typeof forwardRef> => {
+  return function <P>(Component: React.ComponentType<P>) {
     const displayName =
       'withInjector(' + (Component.displayName || Component.name) + ')';
 
-    const Comp = forwardRef((props, ref) => {
+    const Comp = forwardRef<React.ComponentType<P>, P>((props, ref) => {
       return (
         <ServiceInjector providers={args.providers}>
-          <Component ref={ref} {...(props as P)}></Component>
+          <Component ref={ref} {...props}></Component>
         </ServiceInjector>
       );
     });

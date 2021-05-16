@@ -1,5 +1,5 @@
 export * from './types';
-export { config, empty, debug } from './util';
+export { config, debug } from './util';
 export { default as Disposable } from './disposable';
 export { default as Injector } from './injector';
 export { default as InjectionToken } from './token';

@@ -32,5 +32,3 @@ export const debug = (
   if (levels.indexOf(configSettings.logLevel) > levels.indexOf(type)) return;
   configSettings.log(msg, type);
 };
-
-export const empty = Symbol('empty');

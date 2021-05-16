@@ -1,5 +1,12 @@
-import { useCallback, useContext, useEffect, useState, useRef } from 'react';
-import { Subject, BehaviorSubject, Observable } from 'rxjs';
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+  useRef,
+  useMemo
+} from 'react';
+import { Subject, BehaviorSubject, Observable, PartialObserver } from 'rxjs';
 import { GetService } from '@reactive-service/core';
 import { InjectorContext } from './context';
 
@@ -80,14 +87,32 @@ export const useObservableError = <T = any>(
   return state;
 };
 
-export const useSubscribe = <T = any>(
+export function useSubscribe<T = any>(
   ob$: Observable<T>,
-  args: {
-    next?: (p: T) => void;
-    error?: (err: any) => void;
-    complete?: () => void;
-  }
-) => {
+  observer?: PartialObserver<T>
+): void;
+export function useSubscribe<T = any>(
+  ob$: Observable<T>,
+  next?: (value: T) => void,
+  error?: (error: any) => void,
+  complete?: () => void
+): void;
+export function useSubscribe<T = any>(
+  ob$: Observable<T>,
+  next?: ((value: T) => void) | PartialObserver<T>,
+  error?: (error: any) => void,
+  complete?: () => void
+): void {
+  const args = useMemo(() => {
+    if (typeof next === 'object' && next !== null) {
+      return next;
+    }
+    return {
+      next,
+      error,
+      complete
+    };
+  }, [next, error, complete]);
   const argsRef = useRef(args);
   argsRef.current = args;
 
@@ -101,4 +126,4 @@ export const useSubscribe = <T = any>(
       subscription.unsubscribe();
     };
   }, [ob$, argsRef]);
-};
+}

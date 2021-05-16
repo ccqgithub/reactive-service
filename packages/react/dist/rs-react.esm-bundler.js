@@ -1,6 +1,6 @@
 import { Injector } from '@reactive-service/core';
 export * from '@reactive-service/core';
-import React, { createContext, useRef, useContext, useState, useEffect, forwardRef, useCallback } from 'react';
+import React, { createContext, useRef, useContext, useState, useEffect, forwardRef, useCallback, useMemo } from 'react';
 import hoistStatics from 'hoist-non-react-statics';
 import { BehaviorSubject, Subject } from 'rxjs';
 
@@ -36,10 +36,10 @@ const ServiceConsumer = (props) => {
 const WrrappedComponent = () => {};
 export default withInjector({
   providers: []
-})
+})(WrrappedComponent);
 */
 const withInjector = (args) => {
-    return (Component) => {
+    return function (Component) {
         const displayName = 'withInjector(' + (Component.displayName || Component.name) + ')';
         const Comp = forwardRef((props, ref) => {
             return (React.createElement(ServiceInjector, { providers: args.providers },
@@ -106,7 +106,17 @@ const useObservableError = (ob$, onlyAfter = false) => {
     }, [ob$, onlyAfter]);
     return state;
 };
-const useSubscribe = (ob$, args) => {
+function useSubscribe(ob$, next, error, complete) {
+    const args = useMemo(() => {
+        if (typeof next === 'object' && next !== null) {
+            return next;
+        }
+        return {
+            next,
+            error,
+            complete
+        };
+    }, [next, error, complete]);
     const argsRef = useRef(args);
     argsRef.current = args;
     useEffect(() => {
@@ -115,6 +125,6 @@ const useSubscribe = (ob$, args) => {
             subscription.unsubscribe();
         };
     }, [ob$, argsRef]);
-};
+}
 
 export { ServiceConsumer, ServiceInjector, useBehavior, useGetService, useObservable, useObservableError, useService, useSubscribe, withInjector };

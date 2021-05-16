@@ -22,7 +22,6 @@ const debug = (msg, type = 'info', condition = true) => {
         return;
     configSettings.log(msg, type);
 };
-const empty = Symbol('empty');
 
 class Disposable {
     constructor() {
@@ -288,4 +287,4 @@ class Service extends Disposable {
     }
 }
 
-export { Disposable, InjectionToken, Injector, Service, config, debug, empty };
+export { Disposable, InjectionToken, Injector, Service, config, debug };

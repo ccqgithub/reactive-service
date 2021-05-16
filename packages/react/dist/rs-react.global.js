@@ -27,7 +27,6 @@ var RSReact = (function (exports, rxjs, React) {
           return;
       configSettings.log(msg, type);
   };
-  const empty = Symbol('empty');
 
   class Disposable {
       constructor() {
@@ -619,10 +618,10 @@ var RSReact = (function (exports, rxjs, React) {
   const WrrappedComponent = () => {};
   export default withInjector({
     providers: []
-  })
+  })(WrrappedComponent);
   */
   const withInjector = (args) => {
-      return (Component) => {
+      return function (Component) {
           const displayName = 'withInjector(' + (Component.displayName || Component.name) + ')';
           const Comp = React.forwardRef((props, ref) => {
               return (React__default.createElement(ServiceInjector, { providers: args.providers },
@@ -689,7 +688,17 @@ var RSReact = (function (exports, rxjs, React) {
       }, [ob$, onlyAfter]);
       return state;
   };
-  const useSubscribe = (ob$, args) => {
+  function useSubscribe(ob$, next, error, complete) {
+      const args = React.useMemo(() => {
+          if (typeof next === 'object' && next !== null) {
+              return next;
+          }
+          return {
+              next,
+              error,
+              complete
+          };
+      }, [next, error, complete]);
       const argsRef = React.useRef(args);
       argsRef.current = args;
       React.useEffect(() => {
@@ -698,7 +707,7 @@ var RSReact = (function (exports, rxjs, React) {
               subscription.unsubscribe();
           };
       }, [ob$, argsRef]);
-  };
+  }
 
   exports.Disposable = Disposable;
   exports.InjectionToken = InjectionToken;
@@ -708,7 +717,6 @@ var RSReact = (function (exports, rxjs, React) {
   exports.ServiceInjector = ServiceInjector;
   exports.config = config;
   exports.debug = debug;
-  exports.empty = empty;
   exports.useBehavior = useBehavior;
   exports.useGetService = useGetService;
   exports.useObservable = useObservable;

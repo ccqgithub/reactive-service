@@ -1,10 +1,21 @@
 # 依赖注入
 
-本文档使用`React伪代码`示例，但是对于`Vue`等其他项目，核心概念都是一样的，只是api大同小异。
+## 什么是依赖注入？
+
+- `依赖项`：是指`某个类`或`某个组件`执行其功能所需的`服务或对象`。为了便于描述，我们后面都统称为`服务`。
+- `依赖项注入（DI）`：是一种设计模式，在这种设计模式中，类和组件会`从外部源请求依赖项`而不是`自己创建`它们。
+
+一个简单的例子，就是[`Context Api`](https://zh-hans.reactjs.org/docs/context.html)，子组件需要某个服务的时候，从`context`获取就行，至于是哪个`Provider`提供的，完全由父组件控制。
+
+事实上，`@reactive-service/react`的依赖注入正是通过`Context Api`来实现的，只是在这基础上扩展了一套使用方式而已。
 
 ## 定义服务
 
-一般来说，一个服务可以是任意`类`，最好有一个`dispose`方法，用来执行服务实例销毁工作（之后会介绍具体细节）。
+一般来说，一个服务可以是任意值。
+
+但是为了更全面的依赖注入功能，我们先使用`类`作为示例。最好有一个`dispose`方法，用来执行服务实例销毁工作（之后会介绍具体细节）。
+
+在实际项目中，带`状态管理`的服务我们都推荐使用使用前面介绍的[响应式 Service](./service.md)。
 
 ```ts
 // services/test-a.service.ts
@@ -31,7 +42,9 @@ export default class TestAService {
 
 子孙组件使用注入器提供的一个服务时，注入器先检查这个服务有没有实例，没有则创建一个实例，有则返回已有实例。
 
-注入器移除时，它会负责自己提供的所有实例的销毁工作，子孙组件不必操心。
+注入器卸载(unmount)时，它会负责自己提供的所有服务的实例销毁工作，子孙组件不必操心。
+
+> 注意：我们提供 providers 的时候，不能使用内联的方式`providers={[TestService]}`，而是应该定义一个引用变量`useRef([TestAService])`。因为`ServiceInjector`接收到不同的`providers`的时候，会创建一个新的注入器，这样子组件使用到的服务就会发生意想不到的改变！
 
 ```tsx
 // components/parent.tsx
@@ -40,9 +53,11 @@ import Child from "components/child";
 import TestAService from "services/test-a.service";
 
 export default function Parent() {
+  const providers = useRef([TestAService]);
+
   return (
     // 在这里注入 TestAService 服务
-    <ServiceInjector providers={[TestAService]}>
+    <ServiceInjector providers={providers.current}>
       <Child />
       <Child />
     </ServiceInjector>
@@ -82,13 +97,15 @@ export default function Child() {
 export default function Parent() {
   // 使用服务的同时，也可以提供服务
   const testAService = useService(TestAService);
+  const providersA = useRef([TestAService, TestBService]);
+  const providersB = useRef([TestAService]);
 
   return (
-    <ServiceInjector providers={[TestAService, TestBService]}>
+    <ServiceInjector providers={providersA.current}>
       <Child />
       <Child />
 
-      <ServiceInjector providers={[TestAService]}>
+      <ServiceInjector providers={providersB.current}>
         <Child />
       </ServiceInjector>
 

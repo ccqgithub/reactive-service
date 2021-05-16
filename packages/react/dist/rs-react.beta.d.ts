@@ -1,8 +1,9 @@
 import { BehaviorSubject } from 'rxjs';
-import { forwardRef } from 'react';
 import { GetService } from '@reactive-service/core';
+import hoistStatics from 'hoist-non-react-statics';
 import { InjectionProvider } from '@reactive-service/core';
 import { Observable } from 'rxjs';
+import { PartialObserver } from 'rxjs';
 import { default as React_2 } from 'react';
 
 export declare const ServiceConsumer: (props: ServiceConsumerProps) => React_2.ReactNode;
@@ -30,15 +31,13 @@ export declare const useObservableError: <T = any>(ob$: Observable<T>, onlyAfter
 
 export declare const useService: GetService;
 
-export declare const useSubscribe: <T = any>(ob$: Observable<T>, args: {
-    next?: ((p: T) => void) | undefined;
-    error?: ((err: any) => void) | undefined;
-    complete?: (() => void) | undefined;
-}) => void;
+export declare function useSubscribe<T = any>(ob$: Observable<T>, observer?: PartialObserver<T>): void;
+
+export declare function useSubscribe<T = any>(ob$: Observable<T>, next?: (value: T) => void, error?: (error: any) => void, complete?: () => void): void;
 
 export declare const withInjector: (args: {
     providers: InjectionProvider[];
-}) => <P extends Record<string, any>>(Component: React_2.ComponentType<P>) => ReturnType<typeof forwardRef>;
+}) => <P>(Component: React_2.ComponentType<P>) => React_2.ForwardRefExoticComponent<React_2.PropsWithoutRef<P> & React_2.RefAttributes<React_2.ComponentType<P>>> & hoistStatics.NonReactStatics<React_2.ComponentType<P>, {}>;
 
 export * from "@reactive-service/core";
 

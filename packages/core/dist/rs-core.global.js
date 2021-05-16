@@ -23,7 +23,6 @@ var RSCore = (function (exports, rxjs) {
           return;
       configSettings.log(msg, type);
   };
-  const empty = Symbol('empty');
 
   class Disposable {
       constructor() {
@@ -295,7 +294,6 @@ var RSCore = (function (exports, rxjs) {
   exports.Service = Service;
   exports.config = config;
   exports.debug = debug;
-  exports.empty = empty;
 
   Object.defineProperty(exports, '__esModule', { value: true });
 
