@@ -397,9 +397,9 @@ function App() {
   const loginUser = useBehavior(appService.$$.loginUser);
 
   // 订阅通知
-  useSubscribe(appService.$e.notify, {
-    next: (notify) => {
-      alert(notify);
+  useSubscribe(appService.$e.error, {
+    next: (error) => {
+      alert(error);
     }
   });
 
