@@ -136,20 +136,24 @@ export default function Test() {
 
 ## 替代类：useClass
 
-上面的`providers={[ TestAService ]}` 是一个简写，内部会转换成`providers={[ { provide: TestAService, useClass: TestAService } ]}`。
+上面的`[ TestAService ]` 是一个简写，内部会转换成`[ { provide: TestAService, useClass: TestAService } ]`。
 
 `提供者(provide)`和`实际创建实例的类(useClass)`可以不是同一个类。
 
 ```tsx
 function ParentA() {
+  const [providers] = useState(() => {
+    return [
+      {
+        provide: Logger,
+        useClass: LoggerA
+      }
+    ];
+  });
+
   return (
     <ServiceInjector 
-      providers={[
-        {
-          provide: Logger,
-          useClass: LoggerA
-        }
-      ]}
+      providers={providers}
     >
       <Child />
     </ServiceInjector>
@@ -157,15 +161,18 @@ function ParentA() {
 }
 
 function ParentB() {
+  const [providers] = useState(() => {
+    return [
+      {
+        provide: Logger,
+        useClass: LoggerB
+      }
+    ];
+  });
   return (
     // 在这里注入 TestAService 服务
     <ServiceInjector 
-      providers={[
-        {
-          provide: Logger,
-          useClass: LoggerB
-        }
-      ]}
+      providers={providers}
     >
       <Child />
     </ServiceInjector>
