@@ -1,0 +1,37 @@
+{
+  "name": "@reactive-service/vue2",
+  "version": "0.0.1",
+  "description": "a service tool for vue with rxjs",
+  "main": "index.js",
+  "module": "dist/rs-vue.esm-bundler.js",
+  "unpkg": "dist/rs-vue.global.js",
+  "jsdelivr": "dist/rs-vue.global.js",
+  "types": "dist/rs-vue.d.ts",
+  "files": [
+    "index.js",
+    "dist"
+  ],
+  "buildOptions": {
+    "name": "RSVue",
+    "fileName": "rs-vue",
+    "formats": [
+      "esm-bundler",
+      "esm-browser",
+      "cjs",
+      "global"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ccqgithub/reactive-service.git"
+  },
+  "author": "Season Chen",
+  "license": "MIT",
+  "dependencies": {
+    "@reactive-service/core": "^0.6.2"
+  },
+  "peerDependencies": {
+    "vue": "^3.0.0",
+    "rxjs": "^6.6.6"
+  }
+}

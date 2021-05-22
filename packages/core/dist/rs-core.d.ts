@@ -100,6 +100,7 @@ export declare class Service<S extends Record<string, any> = {}, A extends Recor
     get state(): S;
     constructor(args?: ServiceOptions<S, A, E>);
     subscribe<T = any>(ob: Observable<T>, observer?: PartialObserver<T>): void;
+    /** @deprecated Instead of passing separate callback arguments, use an observer argument. Signatures taking separate callback arguments will be removed in v1 because rxjs v8 do it. Details: https://rxjs.dev/deprecations/subscribe-arguments */
     subscribe<T = any>(ob: Observable<T>, next?: (value: T) => void, error?: (error: any) => void, complete?: () => void): void;
 }
 

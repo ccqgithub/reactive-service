@@ -16,13 +16,12 @@ export type InjectionProvide =
   | InjectionConstructor
   | InjectionAbstractConstructor;
 
-export type InjectionValue<
-  P extends InjectionProvide
-> = P extends InjectionToken<infer V>
-  ? V
-  : P extends { prototype: infer C }
-  ? C
-  : never;
+export type InjectionValue<P extends InjectionProvide> =
+  P extends InjectionToken<infer V>
+    ? V
+    : P extends { prototype: infer C }
+    ? C
+    : never;
 
 export type InjectionDisposer = <P extends InjectionProvide = InjectionProvide>(
   service: InjectionValue<P>

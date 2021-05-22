@@ -4,13 +4,11 @@ Object.defineProperty(exports, '__esModule', { value: true });
 
 var core = require('@reactive-service/core');
 var React = require('react');
-var hoistStatics = require('hoist-non-react-statics');
 var rxjs = require('rxjs');
 
 function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e['default'] : e; }
 
 var React__default = /*#__PURE__*/_interopDefaultLegacy(React);
-var hoistStatics__default = /*#__PURE__*/_interopDefaultLegacy(hoistStatics);
 
 const InjectorContext = React.createContext(new core.Injector());
 const ServiceInjector = (props) => {
@@ -37,25 +35,6 @@ const ServiceConsumer = (props) => {
     return typeof props.children === 'function'
         ? props.children({ getService })
         : props.children;
-};
-
-/*
-一般测试，或者封装路由组件列表时使用，因为路由列表时显式添加provider不太方便
-const WrrappedComponent = () => {};
-export default withInjector({
-  providers: []
-})(WrrappedComponent);
-*/
-const withInjector = (args) => {
-    return function (Component) {
-        const displayName = 'withInjector(' + (Component.displayName || Component.name) + ')';
-        const Comp = React.forwardRef((props, ref) => {
-            return (React__default.createElement(ServiceInjector, { providers: args.providers },
-                React__default.createElement(Component, Object.assign({ ref: ref }, props))));
-        });
-        Comp.displayName = displayName;
-        return hoistStatics__default(Comp, Component);
-    };
 };
 
 const useGetService = () => {
@@ -100,14 +79,15 @@ const useBehavior = (ob$) => {
 const useObservableError = (ob$, defaultValue = null, opts = { onlyAfter: true }) => {
     const [state, setState] = React.useState(defaultValue);
     React.useEffect(() => {
-        const ignore = ob$ instanceof rxjs.Subject && opts.onlyAfter && ob$.hasError;
-        if (ignore)
-            return;
+        let isAfter = false;
         const subscription = ob$.subscribe({
             error: (err) => {
+                if (opts.onlyAfter && !isAfter)
+                    return;
                 setState(err);
             }
         });
+        isAfter = true;
         return () => {
             subscription.unsubscribe();
         };
@@ -143,7 +123,6 @@ exports.useObservable = useObservable;
 exports.useObservableError = useObservableError;
 exports.useService = useService;
 exports.useSubscribe = useSubscribe;
-exports.withInjector = withInjector;
 Object.keys(core).forEach(function (k) {
   if (k !== 'default' && !exports.hasOwnProperty(k)) exports[k] = core[k];
 });

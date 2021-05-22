@@ -3,7 +3,7 @@
 ## 概览
 
 ```tsx
-import { Service, ServiceInjector, useService, useBehavior, useObservable, useObservableError, useSubscribe, withInjector, Injector, InjectionToken, config } from '@reactive-service/react';
+import { Service, ServiceInjector, useService, useBehavior, useObservable, useObservableError, useSubscribe, Injector, InjectionToken, config } from '@reactive-service/react';
 ```
 
 ## Service
@@ -69,8 +69,6 @@ service.subscribe({
     //
   }
 });
-
-service.subscribe(nextFn?, errorFn?, completeFn?);
 ```
 
 ## ServiceInjector
@@ -193,25 +191,9 @@ function Child() {
 
 ## useSubscribe
 
-- `useSubscribe(observable, (v) => {}, (err) => {}, () => {})`
 - `useSubscribe(observable, { next: (v) => {}, error: (err) => {}, complete: () => {} })`
 
 订阅`observable`。
-
-## withInjector({ providers: providers })(Component)
-
-一般测试，或者封装路由组件列表时使用，因为路由列表时显式添加provider不太方便
-
-```tsx
-import { withInjector } from "@reactive-service/react";
-
-const WrrappedComponent = () => {};
-export default withInjector({
-  providers: [
-    ...providers
-  ]
-})(WrrappedComponent);
-```
 
 ## Injector
 

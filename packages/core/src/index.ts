@@ -1,5 +1,5 @@
 export * from './types';
-export type { Disposer } from './disposable';
+export { Disposer } from './disposable';
 export type { LogType, LogLevel, LogFunction, ConfigArgs } from './util';
 export type {
   ServiceOptions,

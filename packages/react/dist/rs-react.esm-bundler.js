@@ -1,8 +1,7 @@
 import { Injector } from '@reactive-service/core';
 export * from '@reactive-service/core';
-import React, { createContext, useRef, useContext, useState, useEffect, forwardRef, useCallback, useMemo } from 'react';
-import hoistStatics from 'hoist-non-react-statics';
-import { BehaviorSubject, Subject } from 'rxjs';
+import React, { createContext, useRef, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import { BehaviorSubject } from 'rxjs';
 
 const InjectorContext = createContext(new Injector());
 const ServiceInjector = (props) => {
@@ -29,25 +28,6 @@ const ServiceConsumer = (props) => {
     return typeof props.children === 'function'
         ? props.children({ getService })
         : props.children;
-};
-
-/*
-一般测试，或者封装路由组件列表时使用，因为路由列表时显式添加provider不太方便
-const WrrappedComponent = () => {};
-export default withInjector({
-  providers: []
-})(WrrappedComponent);
-*/
-const withInjector = (args) => {
-    return function (Component) {
-        const displayName = 'withInjector(' + (Component.displayName || Component.name) + ')';
-        const Comp = forwardRef((props, ref) => {
-            return (React.createElement(ServiceInjector, { providers: args.providers },
-                React.createElement(Component, Object.assign({ ref: ref }, props))));
-        });
-        Comp.displayName = displayName;
-        return hoistStatics(Comp, Component);
-    };
 };
 
 const useGetService = () => {
@@ -92,14 +72,15 @@ const useBehavior = (ob$) => {
 const useObservableError = (ob$, defaultValue = null, opts = { onlyAfter: true }) => {
     const [state, setState] = useState(defaultValue);
     useEffect(() => {
-        const ignore = ob$ instanceof Subject && opts.onlyAfter && ob$.hasError;
-        if (ignore)
-            return;
+        let isAfter = false;
         const subscription = ob$.subscribe({
             error: (err) => {
+                if (opts.onlyAfter && !isAfter)
+                    return;
                 setState(err);
             }
         });
+        isAfter = true;
         return () => {
             subscription.unsubscribe();
         };
@@ -127,4 +108,4 @@ function useSubscribe(ob$, next, error, complete) {
     }, [ob$, argsRef]);
 }
 
-export { ServiceConsumer, ServiceInjector, useBehavior, useGetService, useObservable, useObservableError, useService, useSubscribe, withInjector };
+export { ServiceConsumer, ServiceInjector, useBehavior, useGetService, useObservable, useObservableError, useService, useSubscribe };

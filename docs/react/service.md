@@ -96,8 +96,10 @@ const appService = {
 const useBehavior = (subject) => {
   const [state, setState] = useState(subject.value);
   useEffect(() => {
-    const subscription = subject.subscribe((v) => {
-      setState(v);
+    const subscription = subject.subscribe({
+      next(v) => {
+        setState(v);
+      }
     });
     return () => {
       subscription.unsubscribe();

@@ -1,6 +1,6 @@
 {
   "name": "@reactive-service/core",
-  "version": "0.6.2",
+  "version": "0.6.4",
   "description": "a service tool for react with rxjs",
   "main": "index.js",
   "module": "dist/rs-core.esm-bundler.js",
@@ -29,6 +29,6 @@
   "license": "MIT",
   "dependencies": {},
   "peerDependencies": {
-    "rxjs": "^6.6.6"
+    "rxjs": ">=6.0.0"
   }
 }

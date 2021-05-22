@@ -1,6 +1,5 @@
 import { BehaviorSubject } from 'rxjs';
 import { GetService } from '@reactive-service/core';
-import hoistStatics from 'hoist-non-react-statics';
 import { InjectionProvider } from '@reactive-service/core';
 import { Observable } from 'rxjs';
 import { PartialObserver } from 'rxjs';
@@ -27,19 +26,16 @@ export declare const useGetService: () => GetService;
 
 export declare const useObservable: <T = any>(ob$: Observable<T>, defaultValue: T) => T;
 
-export declare const useObservableError: <T = any>(ob$: Observable<T>, defaultValue?: any, opts?: {
+export declare const useObservableError: <E = any>(ob$: Observable<any>, defaultValue?: E | null, opts?: {
     onlyAfter: boolean;
-}) => any;
+}) => E | null;
 
 export declare const useService: GetService;
 
 export declare function useSubscribe<T = any>(ob$: Observable<T>, observer?: PartialObserver<T>): void;
 
+/** @deprecated Instead of passing separate callback arguments, use an observer argument. Signatures taking separate callback arguments will be removed in v1 because rxjs v8 do it. Details: https://rxjs.dev/deprecations/subscribe-arguments */
 export declare function useSubscribe<T = any>(ob$: Observable<T>, next?: (value: T) => void, error?: (error: any) => void, complete?: () => void): void;
-
-export declare const withInjector: (args: {
-    providers: InjectionProvider[];
-}) => <P>(Component: React_2.ComponentType<P>) => React_2.ForwardRefExoticComponent<React_2.PropsWithoutRef<P> & React_2.RefAttributes<React_2.ComponentType<P>>> & hoistStatics.NonReactStatics<React_2.ComponentType<P>, {}>;
 
 export * from "@reactive-service/core";
 
