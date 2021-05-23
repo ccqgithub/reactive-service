@@ -17,3 +17,10 @@
 - 单元测试。
 - `@reactive-service/vue2`：vue2 版
 - `@reactive-service/mp`：小程序版
+
+## 参考
+
+- [async-validator](https://github.com/yiminghe/async-validator)
+- [Angular 依赖注入](https://angular.cn/guide/architecture-services)
+- [Vue](https://github.com/vuejs/vue-next)
+- [RxJS](https://github.com/ReactiveX/rxjs)
