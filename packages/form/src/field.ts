@@ -5,7 +5,6 @@ import {
   switchMap,
   tap,
   map,
-  takeWhile,
   concatMap
 } from 'rxjs/operators';
 import builtinRules from './rule';

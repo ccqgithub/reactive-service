@@ -1,40 +1,27 @@
-/*
-Produces production builds and stitches together d.ts files.
-To specify the package to build, simply pass its name and the desired build
-formats to output (defaults to `buildOptions.formats` specified in that package,
-or "esm,cjs"):
-```
-# name supports fuzzy match. will build all packages with name containing "dom":
-yarn build dom
-# specify the format to output
-yarn build core --formats cjs
-```
-*/
-
-const fs = require('fs-extra');
+const os = require('os');
 const path = require('path');
 const chalk = require('chalk');
 const execa = require('execa');
+const fs = require('fs-extra');
+const minimist = require('minimist');
 const { gzipSync } = require('zlib');
 const { compress } = require('brotli');
 const { targets: allTargets, fuzzyMatchTarget } = require('./utils');
 
-const args = require('minimist')(process.argv.slice(2));
+const args = minimist(process.argv.slice(2));
 const targets = args._;
 const formats = args.formats || args.f;
+const buildTypes = args.types || args.t;
 const sourceMap = args.sourcemap || args.s;
-const isRelease = args.release;
-const buildTypes = args.t || args.types || isRelease;
 const buildAllMatching = args.all || args.a;
 const commit = execa.sync('git', ['rev-parse', 'HEAD']).stdout.slice(0, 7);
 
 run();
 
 async function run() {
-  if (isRelease) {
-    // remove build cache for release builds to avoid outdated enum values
-    await fs.remove(path.resolve(__dirname, '../node_modules/.rts2_cache'));
-  }
+  // remove build cache for release builds to avoid outdated enum values
+  await fs.remove(path.resolve(__dirname, '../node_modules/.rts2_cache'));
+
   if (!targets.length) {
     await buildAll(allTargets);
     checkAllSizes(allTargets);
@@ -45,7 +32,7 @@ async function run() {
 }
 
 async function buildAll(targets) {
-  await runParallel(require('os').cpus().length, targets, build);
+  await runParallel(os.cpus().length, targets, build);
 }
 
 async function runParallel(maxConcurrency, source, iteratorFn) {
@@ -68,16 +55,11 @@ async function runParallel(maxConcurrency, source, iteratorFn) {
 
 async function build(target) {
   const pkgDir = path.resolve(`packages/${target}`);
-  const pkg = require(`${pkgDir}/package.json`);
-
-  // only build published packages for release
-  if (isRelease && pkg.private) {
-    return;
-  }
 
   // if building a specific format, do not remove dist.
   if (!formats) {
     await fs.remove(`${pkgDir}/dist`);
+    await fs.remove(`${pkgDir}/types`);
   }
 
   await execa(
@@ -98,58 +80,11 @@ async function build(target) {
     { stdio: 'inherit' }
   );
 
-  if (buildTypes && pkg.types) {
-    console.log();
-    console.log(
-      chalk.bold(chalk.yellow(`Rolling up type definitions for ${target}...`))
-    );
-
-    // build types
-    const { Extractor, ExtractorConfig } = require('@microsoft/api-extractor');
-
-    const extractorConfigPath = path.resolve(pkgDir, `api-extractor.json`);
-    const extractorConfig = ExtractorConfig.loadFileAndPrepare(
-      extractorConfigPath
-    );
-    const extractorResult = Extractor.invoke(extractorConfig, {
-      localBuild: true,
-      showVerboseMessages: true
-    });
-
-    if (extractorResult.succeeded) {
-      // concat additional d.ts to rolled-up dts
-      const typesDir = path.resolve(pkgDir, 'types');
-      try {
-        const stats = await fs.stat(typesDir);
-        if (stats.isDirectory()) {
-          const dtsPath = path.resolve(pkgDir, pkg.types);
-          const existing = await fs.readFile(dtsPath, 'utf-8');
-          const typeFiles = await fs.readdir(typesDir);
-          const toAdd = await Promise.all(
-            typeFiles.map((file) => {
-              return fs.readFile(path.resolve(typesDir, file), 'utf-8');
-            })
-          );
-          await fs.writeFile(dtsPath, existing + '\n' + toAdd.join('\n'));
-        }
-      } catch (err) {
-        if (err.code !== 'ENOENT') {
-          throw err;
-        }
-      }
-      console.log(
-        chalk.bold(chalk.green(`API Extractor completed successfully.`))
-      );
-    } else {
-      console.error(
-        `API Extractor completed with ${extractorResult.errorCount} errors` +
-          ` and ${extractorResult.warningCount} warnings`
-      );
-      process.exitCode = 1;
-    }
-
-    await fs.remove(`${pkgDir}/dist/packages`);
-  }
+  await fs.move(
+    `${pkgDir}/temp/types/packages/${target}/src`,
+    `${pkgDir}/types`
+  );
+  await fs.remove(`${pkgDir}/temp`);
 }
 
 function checkAllSizes(targets) {

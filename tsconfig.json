@@ -5,7 +5,7 @@
     "declaration": true,
     "sourceMap": true,
     "declarationMap": true,
-    "target": "esnext",
+    "target": "es6",
     "module": "esnext",
     "moduleResolution": "node",
     "allowJs": false,

@@ -1,25 +1,20 @@
 {
   "name": "@reactive-service/react",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "a service tool for react with rxjs",
-  "main": "index.js",
-  "module": "dist/rs-react.esm-bundler.js",
-  "unpkg": "dist/rs-react.global.js",
-  "jsdelivr": "dist/rs-react.global.js",
-  "types": "dist/rs-react.d.ts",
+  "main": "dist/rs-react.js",
+  "module": "dist/rs-react.esm.js",
+  "unpkg": "dist/rs-react.umd.js",
+  "jsdelivr": "dist/rs-react.umd.js",
+  "types": "types/index.d.ts",
   "files": [
-    "index.js",
-    "dist"
+    "src",
+    "dist",
+    "types"
   ],
   "buildOptions": {
     "name": "RSReact",
-    "fileName": "rs-react",
-    "formats": [
-      "esm-bundler",
-      "esm-browser",
-      "cjs",
-      "global"
-    ]
+    "fileName": "rs-react"
   },
   "repository": {
     "type": "git",
@@ -28,11 +23,11 @@
   "author": "Season Chen",
   "license": "MIT",
   "dependencies": {
-    "@reactive-service/core": "^0.6.4"
+    "@reactive-service/core": "^0.7.0"
   },
   "peerDependencies": {
-    "react": "^16.8.0",
-    "rxjs": "^6.6.6"
+    "react": ">=16.8.0",
+    "rxjs": ">=6.0.0"
   },
   "devDependencies": {}
 }

@@ -82,15 +82,6 @@ export const useBehavior = <T = any>(ob$: BehaviorSubject<T>) => {
   return state;
 };
 
-export const useObservableCurrentError = <E = any>(ob$: Observable<any>) => {
-  let error: E | null = null;
-  const subscription = ob$.subscribe({
-    error: (err) => (error = err)
-  });
-  subscription.unsubscribe();
-  return error;
-};
-
 export const useObservableError = <T = any>(
   ob$: Observable<T>,
   defaultValue: any = null,
@@ -98,17 +89,14 @@ export const useObservableError = <T = any>(
 ): any => {
   const state = ref(defaultValue) as Ref<T>;
 
-  if (opts.onlyAfter) {
-    const curError = useObservableCurrentError(ob$);
-    // has error before
-    if (curError !== null) return;
-  }
-
+  let isAfter = false;
   const subscription = ob$.subscribe({
     error: (err) => {
+      if (opts.onlyAfter && !isAfter) return;
       state.value = err;
     }
   });
+  isAfter = true;
 
   onBeforeUnmount(() => {
     subscription.unsubscribe();

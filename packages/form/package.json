@@ -1,25 +1,20 @@
 {
   "name": "@reactive-service/form",
-  "version": "0.1.0",
-  "description": "a service tool for react with rxjs",
-  "main": "index.js",
-  "module": "dist/rs-form.esm-bundler.js",
-  "unpkg": "dist/rs-form.global.js",
-  "jsdelivr": "dist/rs-form.global.js",
-  "types": "dist/rs-form.d.ts",
+  "version": "0.2.0",
+  "description": "a form tool with rxjs",
+  "main": "dist/rs-form.js",
+  "module": "dist/rs-form.esm.js",
+  "unpkg": "dist/rs-form.umd.js",
+  "jsdelivr": "dist/rs-form.umd.js",
+  "types": "types/index.d.ts",
   "files": [
-    "index.js",
-    "dist"
+    "src",
+    "dist",
+    "types"
   ],
   "buildOptions": {
     "name": "RSForm",
-    "fileName": "rs-form",
-    "formats": [
-      "esm-bundler",
-      "esm-browser",
-      "cjs",
-      "global"
-    ]
+    "fileName": "rs-form"
   },
   "repository": {
     "type": "git",
@@ -28,6 +23,6 @@
   "author": "Season Chen",
   "license": "MIT",
   "peerDependencies": {
-    "rxjs": "^6.6.6"
+    "rxjs": ">=6.0.0"
   }
 }

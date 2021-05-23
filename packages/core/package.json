@@ -1,25 +1,20 @@
 {
   "name": "@reactive-service/core",
-  "version": "0.6.4",
-  "description": "a service tool for react with rxjs",
-  "main": "index.js",
-  "module": "dist/rs-core.esm-bundler.js",
-  "unpkg": "dist/rs-core.global.js",
-  "jsdelivr": "dist/rs-core.global.js",
-  "types": "dist/rs-core.d.ts",
+  "version": "0.7.0",
+  "description": "a service tool with rxjs",
+  "main": "dist/rs-core.js",
+  "module": "dist/rs-core.esm.js",
+  "unpkg": "dist/rs-core.umd.js",
+  "jsdelivr": "dist/rs-core.umd.js",
+  "types": "types/index.d.ts",
   "files": [
-    "index.js",
-    "dist"
+    "src",
+    "dist",
+    "types"
   ],
   "buildOptions": {
     "name": "RSCore",
-    "fileName": "rs-core",
-    "formats": [
-      "esm-bundler",
-      "esm-browser",
-      "cjs",
-      "global"
-    ]
+    "fileName": "rs-core"
   },
   "repository": {
     "type": "git",

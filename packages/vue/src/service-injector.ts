@@ -1,4 +1,4 @@
-import { defineComponent, PropType, provide, inject } from 'vue';
+import { defineComponent, provide, inject, PropType } from 'vue';
 import { InjectionProvider, Injector } from '@reactive-service/core';
 import { injectorKey } from './context';
 
