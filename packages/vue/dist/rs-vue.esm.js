@@ -110,9 +110,16 @@ class Service extends Disposable {
     }
 }
 
+const useInjector = (args) => {
+    const instance = getCurrentInstance();
+    const parentInjector = inject(injectorKey, null);
+    const injector = new Injector(args.providers, parentInjector);
+    instance[instanceInjectorKey] = injector;
+    provide(injectorKey, injector);
+};
 const useGetService = () => {
     const instance = getCurrentInstance();
-    const injector = instance[instanceInjectorKey] || inject(injectorKey);
+    const injector = instance[instanceInjectorKey] || inject(injectorKey, null);
     const getService = (provide, opts) => {
         if (!injector) {
             if (!opts || !opts.optional) {
@@ -126,7 +133,7 @@ const useGetService = () => {
 };
 const useService = (provide, opts) => {
     const instance = getCurrentInstance();
-    const injector = instance[instanceInjectorKey] || inject(injectorKey);
+    const injector = instance[instanceInjectorKey] || inject(injectorKey, null);
     if (!injector) {
         if (!opts || !opts.optional) {
             throw new Error(`Never register any injectorå!`);
@@ -181,4 +188,4 @@ function useSubscribe(ob$, observer) {
     });
 }
 
-export { Service, ServiceInjector, useBehavior, useGetService, useObservable, useObservableError, useService, useSubscribe };
+export { Service, ServiceInjector, useBehavior, useGetService, useInjector, useObservable, useObservableError, useService, useSubscribe };

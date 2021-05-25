@@ -1,4 +1,5 @@
 import path from 'path';
+import babel from '@rollup/plugin-babel';
 import replace from '@rollup/plugin-replace';
 import { terser } from 'rollup-plugin-terser';
 import commonjs from '@rollup/plugin-commonjs';
@@ -65,7 +66,10 @@ const outputConfigs = {
       nodeResolve({
         extensions
       }),
-      makeTypescript(true)
+      makeTypescript(true),
+      babel({
+        babelHelpers: 'bundled'
+      })
     ]
   },
   // ES
@@ -86,7 +90,10 @@ const outputConfigs = {
       commonjs({
         sourceMap: false
       }),
-      makeTypescript(false)
+      makeTypescript(false),
+      babel({
+        babelHelpers: 'bundled'
+      })
     ]
   },
   // ES for Browsers
@@ -108,6 +115,9 @@ const outputConfigs = {
         sourceMap: false
       }),
       makeTypescript(false),
+      babel({
+        babelHelpers: 'bundled'
+      }),
       replace({
         preventAssignment: true,
         'process.env.NODE_ENV': JSON.stringify('production')
@@ -142,6 +152,9 @@ const outputConfigs = {
         sourceMap: false
       }),
       makeTypescript(true),
+      babel({
+        babelHelpers: 'bundled'
+      }),
       replace({
         preventAssignment: true,
         'process.env.NODE_ENV': JSON.stringify('development')
@@ -168,6 +181,9 @@ const outputConfigs = {
         sourceMap: false
       }),
       makeTypescript(true),
+      babel({
+        babelHelpers: 'bundled'
+      }),
       replace({
         preventAssignment: true,
         'process.env.NODE_ENV': JSON.stringify('production')

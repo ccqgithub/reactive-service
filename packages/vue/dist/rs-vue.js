@@ -113,9 +113,16 @@ class Service extends core.Disposable {
     }
 }
 
+const useInjector = (args) => {
+    const instance = vue.getCurrentInstance();
+    const parentInjector = vue.inject(injectorKey, null);
+    const injector = new core.Injector(args.providers, parentInjector);
+    instance[instanceInjectorKey] = injector;
+    vue.provide(injectorKey, injector);
+};
 const useGetService = () => {
     const instance = vue.getCurrentInstance();
-    const injector = instance[instanceInjectorKey] || vue.inject(injectorKey);
+    const injector = instance[instanceInjectorKey] || vue.inject(injectorKey, null);
     const getService = (provide, opts) => {
         if (!injector) {
             if (!opts || !opts.optional) {
@@ -129,7 +136,7 @@ const useGetService = () => {
 };
 const useService = (provide, opts) => {
     const instance = vue.getCurrentInstance();
-    const injector = instance[instanceInjectorKey] || vue.inject(injectorKey);
+    const injector = instance[instanceInjectorKey] || vue.inject(injectorKey, null);
     if (!injector) {
         if (!opts || !opts.optional) {
             throw new Error(`Never register any injectorå!`);
@@ -188,6 +195,7 @@ exports.Service = Service;
 exports.ServiceInjector = ServiceInjector;
 exports.useBehavior = useBehavior;
 exports.useGetService = useGetService;
+exports.useInjector = useInjector;
 exports.useObservable = useObservable;
 exports.useObservableError = useObservableError;
 exports.useService = useService;

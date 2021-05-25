@@ -4,6 +4,7 @@ export { default as ServiceInjector } from './service-injector';
 export { default as Service } from './service';
 
 export {
+  useInjector,
   useGetService,
   useService,
   useObservable,

@@ -1,6 +1,6 @@
 {
   "name": "@reactive-service/vue",
-  "version": "0.1.0",
+  "version": "0.2.1",
   "description": "a service tool for vue with rxjs",
   "main": "dist/rs-vue.js",
   "module": "dist/rs-vue.esm.js",

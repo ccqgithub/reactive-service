@@ -21,7 +21,7 @@ import {
 
 export const useInjector = (args: { providers: InjectionProvider[] }) => {
   const instance = getCurrentInstance() as InstanceWithInjector;
-  const parentInjector = inject(injectorKey);
+  const parentInjector = inject(injectorKey, null);
   const injector = new Injector(args.providers, parentInjector);
   instance[instanceInjectorKey] = injector;
   provide(injectorKey, injector);
@@ -29,7 +29,7 @@ export const useInjector = (args: { providers: InjectionProvider[] }) => {
 
 export const useGetService = (): GetService => {
   const instance = getCurrentInstance() as InstanceWithInjector;
-  const injector = instance[instanceInjectorKey] || inject(injectorKey);
+  const injector = instance[instanceInjectorKey] || inject(injectorKey, null);
   const getService: GetService = (provide: any, opts: any) => {
     if (!injector) {
       if (!opts || !opts.optional) {
@@ -44,7 +44,7 @@ export const useGetService = (): GetService => {
 
 export const useService: GetService = (provide: any, opts: any) => {
   const instance = getCurrentInstance() as InstanceWithInjector;
-  const injector = instance[instanceInjectorKey] || inject(injectorKey);
+  const injector = instance[instanceInjectorKey] || inject(injectorKey, null);
   if (!injector) {
     if (!opts || !opts.optional) {
       throw new Error(`Never register any injectorå!`);
