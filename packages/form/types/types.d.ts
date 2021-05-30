@@ -6,7 +6,7 @@ export declare type FieldRule = {
     required?: boolean;
     len?: number;
     min?: number;
-    max: number;
+    max?: number;
     pattern?: RegExp;
     enum?: string[];
     notWhitespace?: boolean;

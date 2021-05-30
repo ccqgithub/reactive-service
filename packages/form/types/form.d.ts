@@ -12,11 +12,13 @@ export default class RSForm<D extends RSFormData = RSFormData> {
     private formField;
     private disposers;
     options: RSFormOptions;
-    data$$: BehaviorSubject<D>;
-    touched$$: BehaviorSubject<boolean>;
-    validating$$: BehaviorSubject<boolean>;
-    errors$$: BehaviorSubject<ValidateError[]>;
-    fields$$: BehaviorSubject<Record<string, RSField<D>>>;
+    $$: {
+        data: BehaviorSubject<D>;
+        touched: BehaviorSubject<boolean>;
+        validating: BehaviorSubject<boolean>;
+        errors: BehaviorSubject<ValidateError[]>;
+        fields: BehaviorSubject<Record<string, RSField<D>>>;
+    };
     get data(): D;
     get touched(): boolean;
     get validating(): boolean;

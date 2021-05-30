@@ -143,6 +143,7 @@ export default class RSField<D extends RSFormData> {
     // dirty
     this.setDirty();
     // update form data
+    console.log('===');
     this.form.onUpdate(this.reducer(this.form.data, value));
   }
 

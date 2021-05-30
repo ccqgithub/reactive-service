@@ -1,6 +1,6 @@
 {
   "name": "@reactive-service/form",
-  "version": "0.2.0",
+  "version": "0.2.3",
   "description": "a form tool with rxjs",
   "main": "dist/rs-form.js",
   "module": "dist/rs-form.esm.js",

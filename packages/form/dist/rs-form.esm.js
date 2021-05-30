@@ -216,7 +216,9 @@ function range(rule, value, source, options) {
     else if (max && !min && val > rule.max) {
         errors.push(format(options.messages[key].max, options.fullField, rule.max));
     }
-    else if (min && max && (val < rule.min || val > rule.max)) {
+    else if (min &&
+        max &&
+        (val < rule.min || val > rule.max)) {
         errors.push(format(options.messages[key].range, options.fullField, rule.min, rule.max));
     }
     return errors;
@@ -636,12 +638,6 @@ class RSField {
 class RSForm {
     constructor(buildSchema, data, options = {}) {
         this.disposers = [];
-        // 是否提交过
-        this.touched$$ = new BehaviorSubject(false);
-        // 正在提交
-        this.validating$$ = new BehaviorSubject(false);
-        // 错误
-        this.errors$$ = new BehaviorSubject([]);
         const { validateOnlyFormTouched = false, validateOnFieldTouched = false, firstRuleError = true } = options;
         this.options = {
             validateOnlyFormTouched,
@@ -649,28 +645,35 @@ class RSForm {
             firstRuleError
         };
         this.buildSchema = buildSchema;
-        this.data$$ = new BehaviorSubject(data);
         this.formField = new RSField(this.getFormFieldSchema(data), {
             form: this,
             namePath: '',
             index: ''
         });
-        this.fields$$ = new BehaviorSubject(this.formField.fields);
+        this.$$ = {
+            data: new BehaviorSubject(data),
+            touched: new BehaviorSubject(false),
+            validating: new BehaviorSubject(false),
+            errors: new BehaviorSubject([]),
+            fields: new BehaviorSubject(this.formField.fields)
+        };
     }
     get data() {
-        return this.data$$.value;
+        return this.$$.data.value;
     }
     get touched() {
-        return this.touched$$.value;
+        if (!this.$$)
+            return false;
+        return this.$$.touched.value;
     }
     get validating() {
-        return this.validating$$.value;
+        return this.$$.validating.value;
     }
     get errors() {
-        return this.errors$$.value;
+        return this.$$.errors.value;
     }
     get fields() {
-        return this.fields$$.value;
+        return this.$$.fields.value;
     }
     get canValidate() {
         return !(!this.touched && this.options.validateOnlyFormTouched);
@@ -688,30 +691,30 @@ class RSForm {
     onUpdate(data) {
         const newData = Object.assign(Object.assign({}, this.data), data);
         const schema = this.getFormFieldSchema(newData);
-        this.data$$.next(newData);
+        this.$$.data.next(newData);
         this.formField.updateSchema(schema);
         this.onChangeStatus();
         this.formField.checkValidate();
     }
     onChangeStatus() {
         const { fieldErrors } = this.formField;
-        this.validating$$.next(this.formField.validating);
-        this.errors$$.next([...fieldErrors]);
-        this.fields$$.next(Object.assign({}, this.formField.fields));
+        this.$$.validating.next(this.formField.validating);
+        this.$$.errors.next([...fieldErrors]);
+        this.$$.fields.next(Object.assign({}, this.formField.fields));
     }
     reset(data) {
-        this.touched$$.next(false);
-        this.data$$.next(data);
+        this.$$.touched.next(false);
+        this.$$.data.next(data);
         this.formField = new RSField(this.getFormFieldSchema(data), {
             form: this,
             namePath: '',
             index: ''
         });
-        this.fields$$.next(Object.assign({}, this.formField.fields));
-        this.errors$$.next([...this.formField.fieldErrors]);
+        this.$$.fields.next(Object.assign({}, this.formField.fields));
+        this.$$.errors.next([...this.formField.fieldErrors]);
     }
     validate() {
-        !this.touched && this.touched$$.next(true);
+        !this.touched && this.$$.touched.next(true);
         return this.formField.validate();
     }
     dispose() {

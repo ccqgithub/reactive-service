@@ -16,37 +16,34 @@ export default class RSForm<D extends RSFormData = RSFormData> {
 
   // options
   options: RSFormOptions;
-  // 表单数据
-  data$$: BehaviorSubject<D>;
-  // 是否提交过
-  touched$$: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
-  // 正在提交
-  validating$$: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
-  // 错误
-  errors$$: BehaviorSubject<ValidateError[]> = new BehaviorSubject<
-    ValidateError[]
-  >([]);
-  // 表单字段
-  fields$$: BehaviorSubject<Record<string, RSField<D>>>;
+
+  $$: {
+    data: BehaviorSubject<D>;
+    touched: BehaviorSubject<boolean>;
+    validating: BehaviorSubject<boolean>;
+    errors: BehaviorSubject<ValidateError[]>;
+    fields: BehaviorSubject<Record<string, RSField<D>>>;
+  };
 
   get data() {
-    return this.data$$.value;
+    return this.$$.data.value;
   }
 
   get touched() {
-    return this.touched$$.value;
+    if (!this.$$) return false;
+    return this.$$.touched.value;
   }
 
   get validating() {
-    return this.validating$$.value;
+    return this.$$.validating.value;
   }
 
   get errors() {
-    return this.errors$$.value;
+    return this.$$.errors.value;
   }
 
   get fields() {
-    return this.fields$$.value;
+    return this.$$.fields.value;
   }
 
   get canValidate() {
@@ -63,21 +60,29 @@ export default class RSForm<D extends RSFormData = RSFormData> {
       validateOnFieldTouched = false,
       firstRuleError = true
     } = options;
+
     this.options = {
       validateOnlyFormTouched,
       validateOnFieldTouched,
       firstRuleError
     };
     this.buildSchema = buildSchema;
-    this.data$$ = new BehaviorSubject(data);
+
     this.formField = new RSField<D>(this.getFormFieldSchema(data), {
       form: this,
       namePath: '',
       index: ''
     });
-    this.fields$$ = new BehaviorSubject(
-      this.formField.fields as Record<string, RSField<D>>
-    );
+
+    this.$$ = {
+      data: new BehaviorSubject(data),
+      touched: new BehaviorSubject<boolean>(false),
+      validating: new BehaviorSubject<boolean>(false),
+      errors: new BehaviorSubject<ValidateError[]>([]),
+      fields: new BehaviorSubject(
+        this.formField.fields as Record<string, RSField<D>>
+      )
+    };
   }
 
   private getFormFieldSchema(data: D): FieldSchema<D> {
@@ -94,7 +99,7 @@ export default class RSForm<D extends RSFormData = RSFormData> {
   onUpdate(data: Partial<D>) {
     const newData = { ...this.data, ...data };
     const schema = this.getFormFieldSchema(newData);
-    this.data$$.next(newData);
+    this.$$.data.next(newData);
     this.formField.updateSchema(schema);
     this.onChangeStatus();
     this.formField.checkValidate();
@@ -102,29 +107,29 @@ export default class RSForm<D extends RSFormData = RSFormData> {
 
   onChangeStatus() {
     const { fieldErrors } = this.formField;
-    this.validating$$.next(this.formField.validating);
-    this.errors$$.next([...fieldErrors]);
-    this.fields$$.next({
+    this.$$.validating.next(this.formField.validating);
+    this.$$.errors.next([...fieldErrors]);
+    this.$$.fields.next({
       ...(this.formField.fields as Record<string, RSField<D>>)
     });
   }
 
   reset(data: D) {
-    this.touched$$.next(false);
-    this.data$$.next(data);
+    this.$$.touched.next(false);
+    this.$$.data.next(data);
     this.formField = new RSField<D>(this.getFormFieldSchema(data), {
       form: this,
       namePath: '',
       index: ''
     });
-    this.fields$$.next({
+    this.$$.fields.next({
       ...(this.formField.fields as Record<string, RSField<D>>)
     });
-    this.errors$$.next([...this.formField.fieldErrors]);
+    this.$$.errors.next([...this.formField.fieldErrors]);
   }
 
   validate() {
-    !this.touched && this.touched$$.next(true);
+    !this.touched && this.$$.touched.next(true);
     return this.formField.validate();
   }
 

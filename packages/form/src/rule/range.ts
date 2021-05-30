@@ -53,11 +53,15 @@ function range(
     errors.push(
       util.format(options.messages[key].min, options.fullField, rule.min)
     );
-  } else if (max && !min && val > rule.max) {
+  } else if (max && !min && val > (rule.max as number)) {
     errors.push(
       util.format(options.messages[key].max, options.fullField, rule.max)
     );
-  } else if (min && max && (val < (rule.min as number) || val > rule.max)) {
+  } else if (
+    min &&
+    max &&
+    (val < (rule.min as number) || val > (rule.max as number))
+  ) {
     errors.push(
       util.format(
         options.messages[key].range,
