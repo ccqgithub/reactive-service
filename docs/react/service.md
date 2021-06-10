@@ -380,7 +380,7 @@ export class AppService extends Service<
 
     // 异步数据了处理
     this.subscribe(
-      this.$.setLoginUser.pipe(
+      this.$a.setLoginUser.pipe(
         //...
       )
     )
@@ -396,7 +396,7 @@ import { useBehavior, useSubscribe } from '@reactive-service/react';
 // App.tsx
 function App() {
   // 订阅 state
-  const loginUser = useBehavior(appService.$$.loginUser);
+  const loginUser = useBehavior(appService.$s.loginUser);
 
   // 订阅通知
   useSubscribe(appService.$e.error, {
@@ -407,7 +407,7 @@ function App() {
 
   // 发送action
   const login = (params) => {
-    appService.$.login.next(params);
+    appService.$a.login.next(params);
   }
 
   // app 卸载时，销毁service，清理订阅等

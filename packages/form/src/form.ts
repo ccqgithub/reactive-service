@@ -26,24 +26,24 @@ export default class RSForm<D extends RSFormData = RSFormData> {
   };
 
   get data() {
-    return this.$$.data.value;
+    return this.$s.data.value;
   }
 
   get touched() {
     if (!this.$$) return false;
-    return this.$$.touched.value;
+    return this.$s.touched.value;
   }
 
   get validating() {
-    return this.$$.validating.value;
+    return this.$s.validating.value;
   }
 
   get errors() {
-    return this.$$.errors.value;
+    return this.$s.errors.value;
   }
 
   get fields() {
-    return this.$$.fields.value;
+    return this.$s.fields.value;
   }
 
   get canValidate() {
@@ -99,7 +99,7 @@ export default class RSForm<D extends RSFormData = RSFormData> {
   onUpdate(data: Partial<D>) {
     const newData = { ...this.data, ...data };
     const schema = this.getFormFieldSchema(newData);
-    this.$$.data.next(newData);
+    this.$s.data.next(newData);
     this.formField.updateSchema(schema);
     this.onChangeStatus();
     this.formField.checkValidate();
@@ -107,29 +107,29 @@ export default class RSForm<D extends RSFormData = RSFormData> {
 
   onChangeStatus() {
     const { fieldErrors } = this.formField;
-    this.$$.validating.next(this.formField.validating);
-    this.$$.errors.next([...fieldErrors]);
-    this.$$.fields.next({
+    this.$s.validating.next(this.formField.validating);
+    this.$s.errors.next([...fieldErrors]);
+    this.$s.fields.next({
       ...(this.formField.fields as Record<string, RSField<D>>)
     });
   }
 
   reset(data: D) {
-    this.$$.touched.next(false);
-    this.$$.data.next(data);
+    this.$s.touched.next(false);
+    this.$s.data.next(data);
     this.formField = new RSField<D>(this.getFormFieldSchema(data), {
       form: this,
       namePath: '',
       index: ''
     });
-    this.$$.fields.next({
+    this.$s.fields.next({
       ...(this.formField.fields as Record<string, RSField<D>>)
     });
-    this.$$.errors.next([...this.formField.fieldErrors]);
+    this.$s.errors.next([...this.formField.fieldErrors]);
   }
 
   validate() {
-    !this.touched && this.$$.touched.next(true);
+    !this.touched && this.$s.touched.next(true);
     return this.formField.validate();
   }
 

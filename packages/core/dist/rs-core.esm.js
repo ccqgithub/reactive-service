@@ -51,17 +51,15 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ***************************************************************************** */
-
 function __rest(s, e) {
-    var t = {};
-    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
-        t[p] = s[p];
-    if (s != null && typeof Object.getOwnPropertySymbols === "function")
-        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
-            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
-                t[p[i]] = s[p[i]];
-        }
-    return t;
+  var t = {};
+
+  for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0) t[p] = s[p];
+
+  if (s != null && typeof Object.getOwnPropertySymbols === "function") for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+    if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i])) t[p[i]] = s[p[i]];
+  }
+  return t;
 }
 
 class InjectionToken {
@@ -223,7 +221,7 @@ class AppService extends Service<State, Actions, Events> {
 
     // listen actions
     this.subscribe(
-      this.$.login.pipe(
+      this.$a.login.pipe(
         map(v => v)
       ),
       {
@@ -243,20 +241,20 @@ class Service extends Disposable {
         // displayName, for debug
         this.displayName = '';
         // state
-        this.$$ = {};
+        this.$s = {};
         // actions
-        this.$ = {};
+        this.$a = {};
         // notifies
         this.$e = {};
         // init state
         const initialState = (args.state || {});
         Object.keys(initialState).forEach((key) => {
-            this.$$[key] = new BehaviorSubject(initialState[key]);
+            this.$s[key] = new BehaviorSubject(initialState[key]);
         });
         // init actions
         const actions = args.actions || [];
         actions.forEach((key) => {
-            this.$[key] = new Subject();
+            this.$a[key] = new Subject();
         });
         // init events
         const events = args.events || [];
@@ -265,8 +263,8 @@ class Service extends Disposable {
         });
         // debug
         // debugs: update state
-        Object.keys(this.$$).forEach((key) => {
-            this.subscribe(this.$$[key], {
+        Object.keys(this.$s).forEach((key) => {
+            this.subscribe(this.$s[key], {
                 next: (v) => {
                     debug(`[Service ${this.displayName}]: set new state [${key}].`, 'info');
                     debug(v, 'info');
@@ -274,8 +272,8 @@ class Service extends Disposable {
             });
         });
         // debugs: new action
-        Object.keys(this.$).forEach((key) => {
-            this.subscribe(this.$[key], {
+        Object.keys(this.$a).forEach((key) => {
+            this.subscribe(this.$a[key], {
                 next: (v) => {
                     debug(`[Service ${this.displayName}]: receive new action [${key}].`, 'info');
                     debug(v, 'info');
@@ -295,8 +293,8 @@ class Service extends Disposable {
     // state
     get state() {
         const state = {};
-        Object.keys(this.$$).forEach((key) => {
-            const source = this.$$[key];
+        Object.keys(this.$s).forEach((key) => {
+            const source = this.$s[key];
             if (source instanceof BehaviorSubject) {
                 state[key] = source.value;
             }

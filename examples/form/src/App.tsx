@@ -24,9 +24,9 @@ const form = new Form<Data>(
 );
 
 function App() {
-  console.log(form.$$.fields, form.$$.fields instanceof BehaviorSubject);
-  const fields = useBehavior(form.$$.fields);
-  const data = useBehavior(form.$$.data);
+  console.log(form.$s.fields, form.$s.fields instanceof BehaviorSubject);
+  const fields = useBehavior(form.$s.fields);
+  const data = useBehavior(form.$s.data);
   console.log(data);
   return (
     <div className="App">

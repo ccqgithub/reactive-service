@@ -231,7 +231,7 @@
 
       // listen actions
       this.subscribe(
-        this.$.login.pipe(
+        this.$a.login.pipe(
           map(v => v)
         ),
         {

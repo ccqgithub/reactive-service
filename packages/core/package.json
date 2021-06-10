@@ -1,6 +1,6 @@
 {
   "name": "@reactive-service/core",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "a service tool with rxjs",
   "main": "dist/rs-core.js",
   "module": "dist/rs-core.esm.js",

@@ -17,8 +17,8 @@ export declare type ServiceOptions<S extends Record<string, any>, A extends Reco
 };
 export default class Service<S extends Record<string, any> = {}, A extends Record<string, any> = {}, E extends Record<string, any> = {}> extends Disposable implements InjectionClass {
     displayName: string;
-    $$: ServiceState<S>;
-    $: ServiceActions<A>;
+    $s: ServiceState<S>;
+    $a: ServiceActions<A>;
     $e: ServiceEvents<E>;
     get state(): S;
     constructor(args?: ServiceOptions<S, A, E>);

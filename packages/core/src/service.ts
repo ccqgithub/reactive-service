@@ -46,7 +46,7 @@ class AppService extends Service<State, Actions, Events> {
 
     // listen actions
     this.subscribe(
-      this.$.login.pipe(
+      this.$a.login.pipe(
         map(v => v)
       ),
       {
@@ -66,21 +66,20 @@ export default class Service<
     E extends Record<string, any> = {}
   >
   extends Disposable
-  implements InjectionClass
-{
+  implements InjectionClass {
   // displayName, for debug
   displayName = '';
   // state
-  $$: ServiceState<S> = {} as ServiceState<S>;
+  $s: ServiceState<S> = {} as ServiceState<S>;
   // actions
-  $: ServiceActions<A> = {} as ServiceActions<A>;
+  $a: ServiceActions<A> = {} as ServiceActions<A>;
   // notifies
   $e: ServiceEvents<E> = {} as ServiceEvents<E>;
   // state
   get state(): S {
     const state = {} as S;
-    (Object.keys(this.$$) as (keyof S)[]).forEach((key) => {
-      const source = this.$$[key];
+    (Object.keys(this.$s) as (keyof S)[]).forEach((key) => {
+      const source = this.$s[key];
       if (source instanceof BehaviorSubject) {
         state[key] = source.value;
       }
@@ -94,12 +93,12 @@ export default class Service<
     // init state
     const initialState = (args.state || {}) as S;
     (Object.keys(initialState) as (keyof S)[]).forEach((key) => {
-      this.$$[key] = new BehaviorSubject<S[typeof key]>(initialState[key]);
+      this.$s[key] = new BehaviorSubject<S[typeof key]>(initialState[key]);
     });
     // init actions
     const actions = args.actions || [];
     actions.forEach((key) => {
-      this.$[key] = new Subject<A[typeof key]>();
+      this.$a[key] = new Subject<A[typeof key]>();
     });
     // init events
     const events = args.events || [];
@@ -109,8 +108,8 @@ export default class Service<
 
     // debug
     // debugs: update state
-    Object.keys(this.$$).forEach((key) => {
-      this.subscribe(this.$$[key], {
+    Object.keys(this.$s).forEach((key) => {
+      this.subscribe(this.$s[key], {
         next: (v: any) => {
           debug(
             `[Service ${this.displayName}]: set new state [${key}].`,
@@ -121,8 +120,8 @@ export default class Service<
       });
     });
     // debugs: new action
-    Object.keys(this.$).forEach((key) => {
-      this.subscribe(this.$[key], {
+    Object.keys(this.$a).forEach((key) => {
+      this.subscribe(this.$a[key], {
         next: (v: any) => {
           debug(
             `[Service ${this.displayName}]: receive new action [${key}].`,

@@ -48,8 +48,8 @@ export default class AppService<
 这样的服务类实例`service`具有以下属性和方法：
 
 - `service.state`: 服务当前状态（如`service.state.loginUser`）。
-- `service.$$`: 服务的可观察状态，是一个[`BehaviorSubject`](https://rxjs-dev.firebaseapp.com/guide/subject#behaviorsubject)实例，（如`service.$$.loginUser`）。
-- `service.$`: 服务的Actions，是一个[`Subject`](https://rxjs.dev/guide/subject)实例，（如`service.$.login`）。
+- `service.$$`: 服务的可观察状态，是一个[`BehaviorSubject`](https://rxjs-dev.firebaseapp.com/guide/subject#behaviorsubject)实例，（如`service.$s.loginUser`）。
+- `service.$`: 服务的Actions，是一个[`Subject`](https://rxjs.dev/guide/subject)实例，（如`service.$a.login`）。
 - `service.$e`: 服务的Events，是一个[`Subject`](https://rxjs.dev/guide/subject)实例，（如`service.$e.notify`）。
 - `service.subscribe(...args)`: 辅助方法，用来在`service`内部订阅[`Observable`](https://rxjs.dev/guide/observable)，通过它产生的订阅，会在`service`销毁时取消订阅。
 - `service.dispose()`: 销毁`service`。
@@ -145,7 +145,7 @@ import { useService, useBehavior } from "@reactive-service/react";
 
 function Child() {
   const appService = useService(AppService);
-  const loginUser = useBehavior(appService.$$.loginUser);
+  const loginUser = useBehavior(appService.$s.loginUser);
   
   return (
     <div>{username: loginUser.name}</div>
