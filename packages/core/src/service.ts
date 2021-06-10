@@ -66,9 +66,12 @@ export default class Service<
     E extends Record<string, any> = {}
   >
   extends Disposable
-  implements InjectionClass {
+  implements InjectionClass
+{
   // displayName, for debug
   displayName = '';
+  // all state
+  $$: BehaviorSubject<S> = new BehaviorSubject({} as S);
   // state
   $s: ServiceState<S> = {} as ServiceState<S>;
   // actions
@@ -111,6 +114,7 @@ export default class Service<
     Object.keys(this.$s).forEach((key) => {
       this.subscribe(this.$s[key], {
         next: (v: any) => {
+          this.$$.next(this.state);
           debug(
             `[Service ${this.displayName}]: set new state [${key}].`,
             'info'

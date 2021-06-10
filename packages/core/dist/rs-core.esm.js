@@ -240,6 +240,8 @@ class Service extends Disposable {
         super();
         // displayName, for debug
         this.displayName = '';
+        // all state
+        this.$$ = new BehaviorSubject({});
         // state
         this.$s = {};
         // actions
@@ -266,6 +268,7 @@ class Service extends Disposable {
         Object.keys(this.$s).forEach((key) => {
             this.subscribe(this.$s[key], {
                 next: (v) => {
+                    this.$$.next(this.state);
                     debug(`[Service ${this.displayName}]: set new state [${key}].`, 'info');
                     debug(v, 'info');
                 }
