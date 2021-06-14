@@ -1,8 +1,6 @@
 import { Observable } from 'rxjs';
 import ValidateError from './error';
 
-export type RSFormData = Record<string, any>;
-
 export type FieldRule = {
   type?: string;
   required?: boolean;
@@ -17,34 +15,81 @@ export type FieldRule = {
   messages?: Record<string, string>;
 };
 
-export type FieldType = {
-  value?: any;
-  fields?: Record<string, FieldType>;
-};
-
-export type FieldSchema<D extends RSFormData = RSFormData> = {
-  key?: string;
-  ruleValue: any;
-  rules: FieldRule[];
-  fields?: FieldSchema<D>[] | Record<string, FieldSchema<D>>;
-  reducer?: (data: D, value: any) => D;
-};
-
-export type BuildFormSchema<D extends RSFormData> = (
-  data: D
-) => Record<string, FieldSchema<D>>;
-
-export type FieldErrors = Record<
-  string,
-  {
-    errors: ValidateError[];
-    fields: FieldErrors;
-  }
->;
-
 export type Validator = (
   rule: FieldRule,
   value: any,
   source: RSFormData,
   Options: Record<string, any>
 ) => string[] | Promise<string[]> | Observable<string[]>;
+
+export type Values = {
+  fields?: Values;
+  [key: string]: any;
+};
+
+export type Schema<V extends Values> = {
+  [Key in keyof V]: V[Key] extends { fields: Record<string, any> }
+    ? {
+        rules?: FieldRule[];
+        fields:
+          | Schema<V[Key]['fields']>
+          | ((key: string) => Schema<V[Key]['fields']>);
+      }
+    : {
+        rules?: FieldRule[];
+        defaultValue: V[Key];
+      };
+};
+
+export type Data<V extends Values> = {
+  [Key in keyof V]: V[Key] extends { fields: Record<string, any> }
+    ? Data
+    : {
+        rules?: FieldRule[];
+        defaultValue: V[Key];
+      };
+}
+
+type vs = {
+  username: string;
+  email: string;
+  bag: {
+    fields: {
+      color: string;
+    };
+  };
+  friends: {
+    arrayFields: {
+      name: string;
+    };
+  };
+};
+
+const s: FieldsSchema<vs> = {
+  username: {
+    rules: [],
+    defaultValue: ''
+  },
+  email: {
+    rules: [],
+    defaultValue: ''
+  },
+  bag: {
+    rules: [],
+    fields: {
+      color: {
+        rules: [],
+        defaultValue: ''
+      }
+    }
+  },
+  friends: {
+    rules: [],
+    fields: (key) => ({
+      name: {
+        rules: [],
+        defaultValue: 'string'
+      }
+    })
+  }
+};
