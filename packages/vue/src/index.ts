@@ -1,5 +1,4 @@
-export * from '@reactive-service/core';
-
+export * from './core';
 export { default as ServiceInjector } from './service-injector';
 export { default as Service } from './service';
 

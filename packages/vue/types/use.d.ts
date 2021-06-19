@@ -1,6 +1,6 @@
 import { Ref } from 'vue';
-import { GetService, InjectionProvider } from '@reactive-service/core';
 import { BehaviorSubject, Observable, PartialObserver } from 'rxjs';
+import { GetService, InjectionProvider } from './core';
 export declare const useInjector: (args: {
     providers: InjectionProvider[];
 }) => void;

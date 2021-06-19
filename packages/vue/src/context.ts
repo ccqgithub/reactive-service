@@ -1,5 +1,5 @@
 import { InjectionKey, getCurrentInstance } from 'vue';
-import { Injector } from '@reactive-service/core';
+import { Injector } from './core';
 
 export const injectorKey: InjectionKey<Injector> = Symbol('Injector Key');
 

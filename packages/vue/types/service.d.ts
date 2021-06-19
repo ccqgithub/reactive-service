@@ -1,6 +1,6 @@
 import { UnwrapNestedRefs } from '@vue/reactivity';
 import { Observable, Subject, PartialObserver } from 'rxjs';
-import { Disposable, InjectionClass } from '@reactive-service/core';
+import { Disposable, InjectionClass } from './core';
 export declare type ServiceActions<A extends Record<string, any>> = {
     [P in keyof A]: Subject<A[P]>;
 };
@@ -21,7 +21,5 @@ export default class Service<S extends Record<string, any> = {}, A extends Recor
     constructor(args?: ServiceOptions<S, A, E>);
     setState(fn: (state: UnwrapNestedRefs<S>) => void): void;
     subscribe<T = any>(ob: Observable<T>, observer?: PartialObserver<T>): void;
-    /** @deprecated Instead of passing separate callback arguments, use an observer argument. Signatures taking separate callback arguments will be removed in v1 because rxjs v8 do it. Details: https://rxjs.dev/deprecations/subscribe-arguments */
-    subscribe<T = any>(ob: Observable<T>, next?: (value: T) => void, error?: (error: any) => void, complete?: () => void): void;
 }
 //# sourceMappingURL=service.d.ts.map

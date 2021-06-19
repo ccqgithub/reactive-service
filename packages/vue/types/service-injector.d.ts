@@ -1,5 +1,5 @@
 import { PropType } from 'vue';
-import { InjectionProvider } from '@reactive-service/core';
+import { InjectionProvider } from './core';
 declare const ServiceInjector: import("vue").DefineComponent<{
     providers: {
         type: PropType<InjectionProvider[]>;

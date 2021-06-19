@@ -6,13 +6,9 @@ import {
   onBeforeUnmount,
   Ref
 } from 'vue';
-import {
-  GetService,
-  Injector,
-  InjectionProvider
-} from '@reactive-service/core';
 import { BehaviorSubject, Observable, PartialObserver } from 'rxjs';
 
+import { GetService, Injector, InjectionProvider } from './core';
 import {
   injectorKey,
   instanceInjectorKey,

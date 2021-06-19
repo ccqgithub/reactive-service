@@ -1,5 +1,5 @@
 import { defineComponent, provide, inject, PropType } from 'vue';
-import { InjectionProvider, Injector } from '@reactive-service/core';
+import { InjectionProvider, Injector } from './core';
 import { injectorKey } from './context';
 
 const ServiceInjector = defineComponent({
