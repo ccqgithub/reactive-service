@@ -256,7 +256,7 @@ class Service extends Disposable {
         // displayName, for debug
         this.displayName = '';
         // actions
-        this.$ = {};
+        this.$a = {};
         // notifies
         this.$e = {};
         // init state
@@ -267,7 +267,7 @@ class Service extends Disposable {
         // init actions
         const actions = args.actions || [];
         actions.forEach((key) => {
-            this.$[key] = new Subject();
+            this.$a[key] = new Subject();
         });
         // init events
         const events = args.events || [];
@@ -276,8 +276,8 @@ class Service extends Disposable {
         });
         // debug
         // debugs: new action
-        Object.keys(this.$).forEach((key) => {
-            this.subscribe(this.$[key], {
+        Object.keys(this.$a).forEach((key) => {
+            this.subscribe(this.$a[key], {
                 next: (v) => {
                     debug(`[Service ${this.displayName}]: receive new action [${key}].`, 'info');
                     debug(v, 'info');

@@ -14,7 +14,7 @@ export declare type ServiceOptions<S extends Record<string, any>, A extends Reco
 };
 export default class Service<S extends Record<string, any> = {}, A extends Record<string, any> = {}, E extends Record<string, any> = {}> extends Disposable implements InjectionClass {
     displayName: string;
-    $: ServiceActions<A>;
+    $a: ServiceActions<A>;
     $e: ServiceEvents<E>;
     _state: UnwrapNestedRefs<S>;
     state: import("vue").DeepReadonly<UnwrapNestedRefs<UnwrapNestedRefs<S>>>;

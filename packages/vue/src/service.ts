@@ -68,7 +68,7 @@ export default class Service<
   // displayName, for debug
   displayName = '';
   // actions
-  $: ServiceActions<A> = {} as ServiceActions<A>;
+  $a: ServiceActions<A> = {} as ServiceActions<A>;
   // notifies
   $e: ServiceEvents<E> = {} as ServiceEvents<E>;
   // state
@@ -86,7 +86,7 @@ export default class Service<
     // init actions
     const actions = args.actions || [];
     actions.forEach((key) => {
-      this.$[key] = new Subject<A[typeof key]>();
+      this.$a[key] = new Subject<A[typeof key]>();
     });
     // init events
     const events = args.events || [];
@@ -96,8 +96,8 @@ export default class Service<
 
     // debug
     // debugs: new action
-    Object.keys(this.$).forEach((key) => {
-      this.subscribe(this.$[key], {
+    Object.keys(this.$a).forEach((key) => {
+      this.subscribe(this.$a[key], {
         next: (v: any) => {
           debug(
             `[Service ${this.displayName}]: receive new action [${key}].`,
