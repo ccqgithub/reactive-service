@@ -214,7 +214,7 @@ const ServiceInjector = defineComponent({
 
 // Service 服务基类
 /*
-type State = {
+type Data = {
   user: User | null;
 }
 type Actions = {
@@ -224,10 +224,10 @@ type Actions = {
 type Events = {
   message: any;
 }
-class AppService extends Service<State, Actions, Events> {
+class AppService extends Service<Data, Actions, Events> {
   constructor() {
     super({
-      state: {
+      data: {
         user: null
       },
       actions: ['login', 'logout'],
@@ -259,11 +259,11 @@ class Service extends Disposable {
         this.$a = {};
         // notifies
         this.$e = {};
-        // init state
-        const _state = reactive(args.state || {});
-        const state = readonly(_state);
-        this._state = _state;
-        this.state = state;
+        // init data
+        const data = reactive(args.data || {});
+        const $d = readonly(data);
+        this.data = data;
+        this.$d = $d;
         // init actions
         const actions = args.actions || [];
         actions.forEach((key) => {
@@ -293,9 +293,6 @@ class Service extends Disposable {
                 }
             });
         });
-    }
-    setState(fn) {
-        fn(this._state);
     }
     subscribe(ob, observer) {
         const subscription = ob.subscribe(observer);

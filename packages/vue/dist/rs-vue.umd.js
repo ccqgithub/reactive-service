@@ -217,7 +217,7 @@
 
   // Service 服务基类
   /*
-  type State = {
+  type Data = {
     user: User | null;
   }
   type Actions = {
@@ -227,10 +227,10 @@
   type Events = {
     message: any;
   }
-  class AppService extends Service<State, Actions, Events> {
+  class AppService extends Service<Data, Actions, Events> {
     constructor() {
       super({
-        state: {
+        data: {
           user: null
         },
         actions: ['login', 'logout'],
@@ -262,11 +262,11 @@
           this.$a = {};
           // notifies
           this.$e = {};
-          // init state
-          const _state = vue.reactive(args.state || {});
-          const state = vue.readonly(_state);
-          this._state = _state;
-          this.state = state;
+          // init data
+          const data = vue.reactive(args.data || {});
+          const $d = vue.readonly(data);
+          this.data = data;
+          this.$d = $d;
           // init actions
           const actions = args.actions || [];
           actions.forEach((key) => {
@@ -296,9 +296,6 @@
                   }
               });
           });
-      }
-      setState(fn) {
-          fn(this._state);
       }
       subscribe(ob, observer) {
           const subscription = ob.subscribe(observer);

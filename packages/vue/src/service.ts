@@ -1,5 +1,4 @@
 import { reactive, readonly } from 'vue';
-import { UnwrapNestedRefs } from '@vue/reactivity';
 import { Observable, Subject, PartialObserver } from 'rxjs';
 import { Disposable, debug, InjectionClass } from './core';
 
@@ -14,14 +13,14 @@ export type ServiceOptions<
   A extends Record<string, any>,
   E extends Record<string, any>
 > = {
-  state?: S;
+  data?: S;
   actions?: (keyof A)[];
   events?: (keyof E)[];
 };
 
 // Service 服务基类
 /* 
-type State = {
+type Data = {
   user: User | null;
 }
 type Actions = {
@@ -31,10 +30,10 @@ type Actions = {
 type Events = {
   message: any;
 }
-class AppService extends Service<State, Actions, Events> {
+class AppService extends Service<Data, Actions, Events> {
   constructor() {
     super({
-      state: {
+      data: {
         user: null
       },
       actions: ['login', 'logout'],
@@ -71,18 +70,18 @@ export default class Service<
   $a: ServiceActions<A> = {} as ServiceActions<A>;
   // notifies
   $e: ServiceEvents<E> = {} as ServiceEvents<E>;
-  // state
-  _state;
-  state;
+  // data
+  private data;
+  $d;
 
   constructor(args: ServiceOptions<S, A, E> = {}) {
     super();
 
-    // init state
-    const _state = reactive<S>(args.state || ({} as S));
-    const state = readonly(_state);
-    this._state = _state;
-    this.state = state;
+    // init data
+    const data = reactive<S>(args.data || ({} as S));
+    const $d = readonly(data);
+    this.data = data;
+    this.$d = $d;
     // init actions
     const actions = args.actions || [];
     actions.forEach((key) => {
@@ -119,10 +118,6 @@ export default class Service<
         }
       });
     });
-  }
-
-  setState(fn: (state: UnwrapNestedRefs<S>) => void) {
-    fn(this._state);
   }
 
   subscribe<T = any>(ob: Observable<T>, observer?: PartialObserver<T>): void {
