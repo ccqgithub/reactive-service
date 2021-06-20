@@ -15,7 +15,7 @@ export default class Service<S extends Record<string, any> = {}, A extends Recor
     displayName: string;
     $a: ServiceActions<A>;
     $e: ServiceEvents<E>;
-    private data;
+    protected data: import("@vue/reactivity").UnwrapNestedRefs<S>;
     $d: import("vue").DeepReadonly<import("@vue/reactivity").UnwrapNestedRefs<import("@vue/reactivity").UnwrapNestedRefs<S>>>;
     constructor(args?: ServiceOptions<S, A, E>);
     subscribe<T = any>(ob: Observable<T>, observer?: PartialObserver<T>): void;

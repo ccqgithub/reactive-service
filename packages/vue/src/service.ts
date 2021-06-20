@@ -71,7 +71,7 @@ export default class Service<
   // notifies
   $e: ServiceEvents<E> = {} as ServiceEvents<E>;
   // data
-  private data;
+  protected data;
   $d;
 
   constructor(args: ServiceOptions<S, A, E> = {}) {
