@@ -6,7 +6,12 @@ import {
   onBeforeUnmount,
   Ref
 } from 'vue';
-import { BehaviorSubject, Observable, PartialObserver } from 'rxjs';
+import {
+  BehaviorSubject,
+  Observable,
+  PartialObserver,
+  Subscription
+} from 'rxjs';
 
 import { GetService, Injector, InjectionProvider } from './core';
 import {
@@ -101,12 +106,22 @@ export const useObservableError = <T = any>(
   return state;
 };
 
-export function useSubscribe<T = any>(
-  ob$: Observable<T>,
-  observer: PartialObserver<T>
-): void {
-  const subscription = ob$.subscribe(observer);
+export function useSubscribe() {
+  const subs = ref<Subscription[]>([]);
+
+  const subscribe = <T = any>(
+    ob$: Observable<T>,
+    observer: PartialObserver<T>
+  ): void => {
+    const sub = ob$.subscribe(observer);
+    subs.value.push(sub);
+  };
+
   onBeforeUnmount(() => {
-    subscription.unsubscribe();
+    subs.value.forEach((sub) => {
+      sub.unsubscribe();
+    });
   });
+
+  return subscribe;
 }

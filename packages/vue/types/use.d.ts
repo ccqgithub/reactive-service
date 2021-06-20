@@ -11,5 +11,5 @@ export declare const useBehavior: <T = any>(ob$: BehaviorSubject<T>) => Ref<T>;
 export declare const useObservableError: <T = any>(ob$: Observable<T>, defaultValue?: any, opts?: {
     onlyAfter: boolean;
 }) => any;
-export declare function useSubscribe<T = any>(ob$: Observable<T>, observer: PartialObserver<T>): void;
+export declare function useSubscribe(): <T = any>(ob$: Observable<T>, observer: PartialObserver<T>) => void;
 //# sourceMappingURL=use.d.ts.map

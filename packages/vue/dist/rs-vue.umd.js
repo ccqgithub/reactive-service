@@ -376,11 +376,18 @@
       });
       return state;
   };
-  function useSubscribe(ob$, observer) {
-      const subscription = ob$.subscribe(observer);
+  function useSubscribe() {
+      const subs = vue.ref([]);
+      const subscribe = (ob$, observer) => {
+          const sub = ob$.subscribe(observer);
+          subs.value.push(sub);
+      };
       vue.onBeforeUnmount(() => {
-          subscription.unsubscribe();
+          subs.value.forEach((sub) => {
+              sub.unsubscribe();
+          });
       });
+      return subscribe;
   }
 
   exports.Disposable = Disposable;

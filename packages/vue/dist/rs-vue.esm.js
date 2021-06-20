@@ -373,11 +373,18 @@ const useObservableError = (ob$, defaultValue = null, opts = { onlyAfter: true }
     });
     return state;
 };
-function useSubscribe(ob$, observer) {
-    const subscription = ob$.subscribe(observer);
+function useSubscribe() {
+    const subs = ref([]);
+    const subscribe = (ob$, observer) => {
+        const sub = ob$.subscribe(observer);
+        subs.value.push(sub);
+    };
     onBeforeUnmount(() => {
-        subscription.unsubscribe();
+        subs.value.forEach((sub) => {
+            sub.unsubscribe();
+        });
     });
+    return subscribe;
 }
 
 export { Disposable, InjectionToken, Injector, Service, ServiceInjector, config, debug, useBehavior, useGetService, useInjector, useObservable, useObservableError, useService, useSubscribe };
