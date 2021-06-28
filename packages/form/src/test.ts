@@ -1,98 +1,99 @@
-import { FieldsSchema } from './types';
+import { from, Subject, BehaviorSubject, Subscription } from 'rxjs';
+import { switchMap, tap } from 'rxjs/operators';
 
-type FieldOptions = {
-  name: string;
-  defaultValue: any;
+type FieldState<T> = {
+  value: T;
+  valid: boolean;
+  dirty: boolean;
+  touched: boolean;
+  validating: boolean;
+  errors: Error[];
 };
 
-class Field {
-  name: string;
-  defaultValue: any;
-  value: any;
-  isTouched = false;
-  isDirty = false;
-  isValidating = false;
+class Field<T> {
+  state$: BehaviorSubject<FieldState<T>>;
+  private validate$: Subject<void> = new Subject();
+  private rules: any[] = [];
+  private sub: Subscription | null = null;
 
-  constructor(opts: FieldOptions) {
-    const { name, defaultValue } = opts;
-    this.name = name;
-    this.defaultValue = defaultValue;
-    this.value = defaultValue;
+  constructor(args: { rules: any[]; defaultValue: T }) {
+    const { rules = [], defaultValue } = args;
+
+    this.rules = rules;
+    this.state$ = new BehaviorSubject<FieldState<T>>({
+      value: defaultValue,
+      valid: true,
+      dirty: false,
+      touched: false,
+      validating: false,
+      errors: []
+    });
+
+    this.internalReset({ defaultValue }, true);
   }
 
-  onTouch() {
-    this.isTouched = true;
+  private validateRules() {
+    return Promise.resolve([] as Error[]);
   }
 
-  onChange(value: any) {
-    const lastValue = this.value;
-    this.value = value;
-    if (lastValue !== this.value && !this.isDirty) {
-      this.isDirty = true;
+  private internalReset(args: { defaultValue: T }, init = false) {
+    const { defaultValue } = args;
+
+    if (this.sub) this.sub.unsubscribe();
+    this.sub = this.validate$
+      .pipe(
+        tap(() => {
+          this.updateState({ validating: true });
+        }),
+        switchMap(() => {
+          return from(this.validateRules());
+        }),
+        tap((errs) => {
+          this.updateState({
+            validating: false,
+            errors: errs,
+            valid: !errs.length
+          });
+        })
+      )
+      .subscribe();
+
+    if (!init) {
+      this.state$.next({
+        value: defaultValue,
+        valid: true,
+        dirty: false,
+        touched: false,
+        validating: false,
+        errors: []
+      });
     }
   }
 
-  onValidate() {
-    this.isValidating = true;
+  private updateState(s: Partial<FieldState<T>>) {
+    this.state$.next({
+      ...this.state$.value,
+      ...s
+    });
   }
 
-  dispose() {
-    //
-  }
-}
-
-class Fields {
-  fields: Record<string, Field> = {};
-  schema: FieldsSchema;
-
-  constructor(key: string, schema: FieldsSchema) {
-    this.schema = schema;
+  setTouched() {
+    this.updateState({
+      touched: true
+    });
   }
 
-  register(key: string, opts: FieldOptions) {
-    const s = this.schema[key];
-
-    if (!s) {
-      throw new Error(`The key [${key}] not defined in the schema!`);
-    }
-
-    if (this.fields[key]) {
-      throw new Error(`Duplicate register field [${key}]`);
-    }
-
-    this.fields[key] = new Field(opts);
+  setValue(value: T) {
+    this.updateState({
+      value: value,
+      dirty: true
+    });
+    this.validate$.next();
   }
 
-  unregister(key: string) {
-    const field = this.fields[key];
-
-    if (!field) {
-      throw new Error(`The field [${key}] not registed!`)
-    }
-
-    field.dispose();
-    delete this.fields[key];
+  reset(args: { defaultValue: T }) {
+    this.internalReset(args);
   }
 
-  useFields(key: string) {
-    //
-  }
-}
-
-type Values = {
-  username: string;
-  email: string;
-  bag: {
-    fileds: {
-      color: string;
-    };
-  };
-  friends: {
-    fileds: {
-      name: string;
-    };
-  };
-};
-class Form {
-  //
+  validate() {}
 }
