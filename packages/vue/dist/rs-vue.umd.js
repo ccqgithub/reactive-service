@@ -337,57 +337,61 @@
       }
       return injector.get(provide, opts);
   };
-  const useObservable = (ob$, defaultValue) => {
-      const state = vue.ref(defaultValue);
-      const subscription = ob$.subscribe({
-          next: (v) => (state.value = v)
-      });
+  function useRx() {
+      const subs = [];
       vue.onBeforeUnmount(() => {
-          subscription.unsubscribe();
-      });
-      return state;
-  };
-  const useBehavior = (ob$) => {
-      if (!(ob$ instanceof rxjs.BehaviorSubject)) {
-          throw new Error(`The useBehaviorState can only use with BehaviorSubject!`);
-      }
-      const state = vue.ref(ob$.value);
-      const subscription = ob$.subscribe({
-          next: (v) => (state.value = v)
-      });
-      vue.onBeforeUnmount(() => {
-          subscription.unsubscribe();
-      });
-      return state;
-  };
-  const useObservableError = (ob$, defaultValue = null, opts = { onlyAfter: true }) => {
-      const state = vue.ref(defaultValue);
-      let isAfter = false;
-      const subscription = ob$.subscribe({
-          error: (err) => {
-              if (opts.onlyAfter && !isAfter)
-                  return;
-              state.value = err;
-          }
-      });
-      isAfter = true;
-      vue.onBeforeUnmount(() => {
-          subscription.unsubscribe();
-      });
-      return state;
-  };
-  function useSubscribe() {
-      const subs = vue.ref([]);
-      const subscribe = (ob$, observer) => {
-          const sub = ob$.subscribe(observer);
-          subs.value.push(sub);
-      };
-      vue.onBeforeUnmount(() => {
-          subs.value.forEach((sub) => {
+          subs.forEach((sub) => {
               sub.unsubscribe();
           });
       });
-      return subscribe;
+      const subscribe = (ob$, observer) => {
+          const sub = ob$.subscribe(observer);
+          subs.push(sub);
+          const unsubscribe = () => {
+              sub.unsubscribe();
+              const i = subs.indexOf(sub);
+              if (i !== -1)
+                  subs.splice(i, 1);
+          };
+          return unsubscribe;
+      };
+      const refBehavior = (ob$) => {
+          const res = vue.ref(ob$.value);
+          subscribe(ob$, {
+              next: (v) => {
+                  res.value = v;
+              }
+          });
+          return res;
+      };
+      const refObservable = (ob$, defaultValue) => {
+          const res = vue.ref(defaultValue);
+          subscribe(ob$, {
+              next: (v) => {
+                  res.value = v;
+              }
+          });
+          return res;
+      };
+      const refObservableError = (ob$, defaultValue, opts = { onlyAfter: true }) => {
+          const res = vue.ref(defaultValue);
+          let isAfter = false;
+          subscribe(ob$, {
+              error: (err) => {
+                  if (opts.onlyAfter && !isAfter)
+                      return;
+                  res.value = err;
+              }
+          });
+          isAfter = true;
+          return res;
+      };
+      return {
+          subscribe,
+          refObservable,
+          refBehavior,
+          refObservableError
+      };
   }
 
   exports.Disposable = Disposable;
@@ -397,13 +401,10 @@
   exports.ServiceInjector = ServiceInjector;
   exports.config = config;
   exports.debug = debug;
-  exports.useBehavior = useBehavior;
   exports.useGetService = useGetService;
   exports.useInjector = useInjector;
-  exports.useObservable = useObservable;
-  exports.useObservableError = useObservableError;
+  exports.useRx = useRx;
   exports.useService = useService;
-  exports.useSubscribe = useSubscribe;
 
   Object.defineProperty(exports, '__esModule', { value: true });
 

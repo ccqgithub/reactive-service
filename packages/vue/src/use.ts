@@ -55,73 +55,74 @@ export const useService: GetService = (provide: any, opts: any) => {
   return injector.get(provide, opts);
 };
 
-export const useObservable = <T = any>(ob$: Observable<T>, defaultValue: T) => {
-  const state = ref(defaultValue) as Ref<T>;
-  const subscription = ob$.subscribe({
-    next: (v) => (state.value = v)
-  });
-  onBeforeUnmount(() => {
-    subscription.unsubscribe();
-  });
-
-  return state;
-};
-
-export const useBehavior = <T = any>(ob$: BehaviorSubject<T>) => {
-  if (!(ob$ instanceof BehaviorSubject)) {
-    throw new Error(`The useBehaviorState can only use with BehaviorSubject!`);
-  }
-
-  const state = ref(ob$.value) as Ref<T>;
-  const subscription = ob$.subscribe({
-    next: (v) => (state.value = v)
-  });
-  onBeforeUnmount(() => {
-    subscription.unsubscribe();
-  });
-
-  return state;
-};
-
-export const useObservableError = <T = any>(
-  ob$: Observable<T>,
-  defaultValue: any = null,
-  opts: { onlyAfter: boolean } = { onlyAfter: true }
-): any => {
-  const state = ref(defaultValue) as Ref<T>;
-
-  let isAfter = false;
-  const subscription = ob$.subscribe({
-    error: (err) => {
-      if (opts.onlyAfter && !isAfter) return;
-      state.value = err;
-    }
-  });
-  isAfter = true;
+export function useRx() {
+  const subs: Subscription[] = [];
 
   onBeforeUnmount(() => {
-    subscription.unsubscribe();
-  });
-
-  return state;
-};
-
-export function useSubscribe() {
-  const subs = ref<Subscription[]>([]);
-
-  const subscribe = <T = any>(
-    ob$: Observable<T>,
-    observer: PartialObserver<T>
-  ): void => {
-    const sub = ob$.subscribe(observer);
-    subs.value.push(sub);
-  };
-
-  onBeforeUnmount(() => {
-    subs.value.forEach((sub) => {
+    subs.forEach((sub) => {
       sub.unsubscribe();
     });
   });
 
-  return subscribe;
+  const subscribe = <T = any>(
+    ob$: Observable<T>,
+    observer: PartialObserver<T>
+  ): Subscription['unsubscribe'] => {
+    const sub = ob$.subscribe(observer);
+    subs.push(sub);
+
+    const unsubscribe = () => {
+      sub.unsubscribe();
+      const i = subs.indexOf(sub);
+      if (i !== -1) subs.splice(i, 1);
+    };
+
+    return unsubscribe;
+  };
+
+  const refBehavior = <T = any>(ob$: BehaviorSubject<T>) => {
+    const res = ref(ob$.value) as Ref<T>;
+    subscribe(ob$, {
+      next: (v) => {
+        res.value = v;
+      }
+    });
+    return res;
+  };
+
+  const refObservable = <T = any>(ob$: Observable<T>, defaultValue: T) => {
+    const res = ref(defaultValue) as Ref<T>;
+    subscribe(ob$, {
+      next: (v) => {
+        res.value = v;
+      }
+    });
+    return res;
+  };
+
+  const refObservableError = <T = any>(
+    ob$: Observable<T>,
+    defaultValue: T,
+    opts: { onlyAfter: boolean } = { onlyAfter: true }
+  ) => {
+    const res = ref(defaultValue) as Ref<T>;
+
+    let isAfter = false;
+    subscribe(ob$, {
+      error: (err) => {
+        if (opts.onlyAfter && !isAfter) return;
+        res.value = err;
+      }
+    });
+    isAfter = true;
+
+    return res;
+  };
+
+  return {
+    subscribe,
+    refObservable,
+    refBehavior,
+    refObservableError
+  };
 }

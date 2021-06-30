@@ -1,5 +1,5 @@
-import { defineComponent, inject, provide, reactive, readonly, getCurrentInstance, ref, onBeforeUnmount } from 'vue';
-import { Subject, BehaviorSubject } from 'rxjs';
+import { defineComponent, inject, provide, reactive, readonly, getCurrentInstance, onBeforeUnmount, ref } from 'vue';
+import { Subject } from 'rxjs';
 
 const configSettings = {
     logLevel: process.env.NODE_ENV === 'development' ? 'info' : 'error',
@@ -334,57 +334,61 @@ const useService = (provide, opts) => {
     }
     return injector.get(provide, opts);
 };
-const useObservable = (ob$, defaultValue) => {
-    const state = ref(defaultValue);
-    const subscription = ob$.subscribe({
-        next: (v) => (state.value = v)
-    });
+function useRx() {
+    const subs = [];
     onBeforeUnmount(() => {
-        subscription.unsubscribe();
-    });
-    return state;
-};
-const useBehavior = (ob$) => {
-    if (!(ob$ instanceof BehaviorSubject)) {
-        throw new Error(`The useBehaviorState can only use with BehaviorSubject!`);
-    }
-    const state = ref(ob$.value);
-    const subscription = ob$.subscribe({
-        next: (v) => (state.value = v)
-    });
-    onBeforeUnmount(() => {
-        subscription.unsubscribe();
-    });
-    return state;
-};
-const useObservableError = (ob$, defaultValue = null, opts = { onlyAfter: true }) => {
-    const state = ref(defaultValue);
-    let isAfter = false;
-    const subscription = ob$.subscribe({
-        error: (err) => {
-            if (opts.onlyAfter && !isAfter)
-                return;
-            state.value = err;
-        }
-    });
-    isAfter = true;
-    onBeforeUnmount(() => {
-        subscription.unsubscribe();
-    });
-    return state;
-};
-function useSubscribe() {
-    const subs = ref([]);
-    const subscribe = (ob$, observer) => {
-        const sub = ob$.subscribe(observer);
-        subs.value.push(sub);
-    };
-    onBeforeUnmount(() => {
-        subs.value.forEach((sub) => {
+        subs.forEach((sub) => {
             sub.unsubscribe();
         });
     });
-    return subscribe;
+    const subscribe = (ob$, observer) => {
+        const sub = ob$.subscribe(observer);
+        subs.push(sub);
+        const unsubscribe = () => {
+            sub.unsubscribe();
+            const i = subs.indexOf(sub);
+            if (i !== -1)
+                subs.splice(i, 1);
+        };
+        return unsubscribe;
+    };
+    const refBehavior = (ob$) => {
+        const res = ref(ob$.value);
+        subscribe(ob$, {
+            next: (v) => {
+                res.value = v;
+            }
+        });
+        return res;
+    };
+    const refObservable = (ob$, defaultValue) => {
+        const res = ref(defaultValue);
+        subscribe(ob$, {
+            next: (v) => {
+                res.value = v;
+            }
+        });
+        return res;
+    };
+    const refObservableError = (ob$, defaultValue, opts = { onlyAfter: true }) => {
+        const res = ref(defaultValue);
+        let isAfter = false;
+        subscribe(ob$, {
+            error: (err) => {
+                if (opts.onlyAfter && !isAfter)
+                    return;
+                res.value = err;
+            }
+        });
+        isAfter = true;
+        return res;
+    };
+    return {
+        subscribe,
+        refObservable,
+        refBehavior,
+        refObservableError
+    };
 }
 
-export { Disposable, InjectionToken, Injector, Service, ServiceInjector, config, debug, useBehavior, useGetService, useInjector, useObservable, useObservableError, useService, useSubscribe };
+export { Disposable, InjectionToken, Injector, Service, ServiceInjector, config, debug, useGetService, useInjector, useRx, useService };
