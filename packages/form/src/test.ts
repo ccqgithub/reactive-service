@@ -1,5 +1,5 @@
 import { from, Subject, BehaviorSubject, Subscription } from 'rxjs';
-import { switchMap, tap } from 'rxjs/operators';
+import { catchError, switchMap, tap } from 'rxjs/operators';
 
 type FieldState<T> = {
   value: T;
@@ -10,8 +10,16 @@ type FieldState<T> = {
   errors: Error[];
 };
 
+type FieldResolve<T> = (state: FieldState<T>) => void;
+
+type setValueOptions = {
+  shouldDirty?: boolean;
+};
+
 class Field<T> {
   state$: BehaviorSubject<FieldState<T>>;
+  private waitings: FieldResolve<T>[] = [];
+  private lastValidate?: T;
   private validate$: Subject<void> = new Subject();
   private rules: any[] = [];
   private sub: Subscription | null = null;
@@ -32,6 +40,10 @@ class Field<T> {
     this.internalReset({ defaultValue }, true);
   }
 
+  get state() {
+    return this.state$.value;
+  }
+
   private validateRules() {
     return Promise.resolve([] as Error[]);
   }
@@ -43,6 +55,7 @@ class Field<T> {
     this.sub = this.validate$
       .pipe(
         tap(() => {
+          this.lastValidate = this.state.value;
           this.updateState({ validating: true });
         }),
         switchMap(() => {
@@ -54,6 +67,14 @@ class Field<T> {
             errors: errs,
             valid: !errs.length
           });
+          this.waitings.forEach((resolve) => {
+            resolve(this.state);
+          });
+          this.waitings = [];
+        }),
+        catchError((err, caught) => {
+          console.error && console.error(err);
+          return caught;
         })
       )
       .subscribe();
@@ -83,17 +104,39 @@ class Field<T> {
     });
   }
 
-  setValue(value: T) {
+  setValue(v: T, args: setValueOptions = {}) {
+    const { value } = this.state;
+    const dirty = value !== v;
+    const { shouldDirty = dirty } = args;
+
     this.updateState({
       value: value,
-      dirty: true
+      dirty: shouldDirty
     });
-    this.validate$.next();
+
+    if (dirty) this.validate();
   }
 
   reset(args: { defaultValue: T }) {
     this.internalReset(args);
   }
 
-  validate() {}
+  validate() {
+    const { lastValidate, state } = this;
+    const { value } = state;
+    const needValidate = lastValidate !== value;
+
+    const promise = new Promise<FieldState<T>>((resolve) => {
+      if (needValidate) {
+        this.waitings.push(resolve);
+      } else {
+        resolve(state);
+      }
+    });
+    if (needValidate) this.validate$.next();
+
+    return promise;
+  }
 }
+
+export default Field;
