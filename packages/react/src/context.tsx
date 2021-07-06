@@ -5,7 +5,7 @@ import React, {
   useRef,
   useState
 } from 'react';
-import { Injector, GetService } from '@reactive-service/core';
+import { Injector, GetService } from './core';
 import { ServiceInjectorProps, ServiceConsumerProps } from './types';
 
 const InjectorContext = createContext<Injector>(new Injector());

@@ -1,5 +1,5 @@
 import React from 'react';
-import { InjectionProvider, GetService } from '@reactive-service/core';
+import { InjectionProvider, GetService } from './core';
 
 export type ServiceInjectorProps = {
   providers?: InjectionProvider[];

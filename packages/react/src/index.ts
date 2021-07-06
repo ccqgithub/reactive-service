@@ -1,5 +1,4 @@
-export * from '@reactive-service/core';
-
+export * from './core';
 export * from './types';
 
 export { ServiceInjector, ServiceConsumer } from './context';

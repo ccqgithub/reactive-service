@@ -1,5 +1,5 @@
 import React from 'react';
-import { Injector } from '@reactive-service/core';
+import { Injector } from './core';
 import { ServiceInjectorProps, ServiceConsumerProps } from './types';
 declare const InjectorContext: React.Context<Injector>;
 declare const ServiceInjector: (props: ServiceInjectorProps) => React.ReactElement;

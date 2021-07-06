@@ -7,7 +7,7 @@ import {
   useMemo
 } from 'react';
 import { BehaviorSubject, Observable, PartialObserver } from 'rxjs';
-import { GetService } from '@reactive-service/core';
+import { GetService } from './core';
 import { InjectorContext } from './context';
 
 export const useGetService = (): GetService => {

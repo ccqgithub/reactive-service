@@ -1,5 +1,5 @@
 import { BehaviorSubject, Observable, PartialObserver } from 'rxjs';
-import { GetService } from '@reactive-service/core';
+import { GetService } from './core';
 export declare const useGetService: () => GetService;
 export declare const useService: GetService;
 export declare const useObservable: <T = any>(ob$: Observable<T>, defaultValue: T) => T;
