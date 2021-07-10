@@ -1,4 +1,11 @@
-import { defineComponent, provide, inject, PropType } from 'vue';
+import {
+  defineComponent,
+  provide,
+  inject,
+  PropType,
+  getCurrentInstance,
+  ComponentInternalInstance
+} from 'vue';
 import { InjectionProvider, Injector } from './core';
 import { injectorKey } from './context';
 
@@ -7,8 +14,12 @@ const ServiceInjector = defineComponent({
     providers: { type: Object as PropType<InjectionProvider[]>, required: true }
   },
   setup(props) {
+    const instance = getCurrentInstance() as ComponentInternalInstance;
     const parentInjector = inject(injectorKey);
-    const injector = new Injector(props.providers, parentInjector);
+    const injector = new Injector(props.providers, {
+      parent: parentInjector || null,
+      app: instance?.appContext.app
+    });
     provide(injectorKey, injector);
   }
 });

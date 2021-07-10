@@ -6,6 +6,8 @@ declare const ServiceInjector: import("vue").DefineComponent<{
         required: true;
     };
 }, void, unknown, {}, {}, import("vue").ComponentOptionsMixin, import("vue").ComponentOptionsMixin, Record<string, any>, string, import("vue").VNodeProps & import("vue").AllowedComponentProps & import("vue").ComponentCustomProps, Readonly<{
+    providers?: unknown;
+} & {
     providers: InjectionProvider[];
 } & {}>, {}>;
 export default ServiceInjector;

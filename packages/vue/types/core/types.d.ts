@@ -1,3 +1,4 @@
+import { App } from 'vue';
 import InjectionToken from './token';
 export declare type InjectionClass = Record<string, any>;
 export declare type InjectionConstructor<T = InjectionClass> = {
@@ -21,6 +22,7 @@ export declare type InjectionProviderObj = {
 };
 export declare type InjectionProvider = InjectionProvide | InjectionProviderObj;
 export declare type InjectionContext = {
+    app: App<Element>;
     useService: GetService;
 };
 export interface GetService {

@@ -1,3 +1,4 @@
+import { App } from 'vue';
 import { debug } from './util';
 import InjectionToken from './token';
 import {
@@ -28,12 +29,20 @@ export default class Injector {
   private parent: Injector | null = null;
   // 当前 injector 上的服务记录
   private records: ProviderRecords = new Map();
+  app: App<Element>;
 
   constructor(
-    providers: InjectionProvider[] = [],
-    parent: Injector | null = null
+    providers: InjectionProvider[],
+    opts: {
+      parent: Injector | null;
+      app: App<Element>;
+    }
   ) {
+    const { parent = null, app } = opts;
+
+    this.app = app;
     this.parent = parent;
+
     // provider records
     providers.forEach((provider) => {
       let record: ProviderRecord | null = null;
@@ -139,6 +148,7 @@ export default class Injector {
 
   private $_initRecord(record: ProviderRecord): void {
     const ctx: InjectionContext = {
+      app: this.app,
       useService: (provide: InjectionProvide, opts: any) => {
         return this.get(provide, opts);
       }

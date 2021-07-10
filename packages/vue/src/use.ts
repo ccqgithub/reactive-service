@@ -23,7 +23,10 @@ import {
 export const useInjector = (args: { providers: InjectionProvider[] }) => {
   const instance = getCurrentInstance() as InstanceWithInjector;
   const parentInjector = inject(injectorKey, null);
-  const injector = new Injector(args.providers, parentInjector);
+  const injector = new Injector(args.providers, {
+    parent: parentInjector,
+    app: instance.appContext.app
+  });
   instance[instanceInjectorKey] = injector;
   provide(injectorKey, injector);
 };

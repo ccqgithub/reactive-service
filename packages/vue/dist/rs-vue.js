@@ -79,11 +79,13 @@ class InjectionToken {
 
 // service injector
 class Injector {
-    constructor(providers = [], parent = null) {
+    constructor(providers, opts) {
         // parent injector
         this.parent = null;
         // 当前 injector 上的服务记录
         this.records = new Map();
+        const { parent = null, app } = opts;
+        this.app = app;
         this.parent = parent;
         // provider records
         providers.forEach((provider) => {
@@ -161,6 +163,7 @@ class Injector {
     }
     $_initRecord(record) {
         const ctx = {
+            app: this.app,
             useService: (provide, opts) => {
                 return this.get(provide, opts);
             }
@@ -210,93 +213,79 @@ const ServiceInjector = vue.defineComponent({
         providers: { type: Object, required: true }
     },
     setup(props) {
+        const instance = vue.getCurrentInstance();
         const parentInjector = vue.inject(injectorKey);
-        const injector = new Injector(props.providers, parentInjector);
+        const injector = new Injector(props.providers, {
+            parent: parentInjector || null,
+            app: instance === null || instance === void 0 ? void 0 : instance.appContext.app
+        });
         vue.provide(injectorKey, injector);
     }
 });
 
-// Service 服务基类
-/*
-type Data = {
-  user: User | null;
-}
-type Actions = {
-  login: LoginParams;
-  logout: undefined;
-};
-type Events = {
-  message: any;
-}
-class AppService extends Service<Data, Actions, Events> {
-  constructor() {
-    super({
-      data: {
-        user: null
-      },
-      actions: ['login', 'logout'],
-      events: ['message']
-    })
-
-    // listen actions
-    this.subscribe(
-      this.$a.login.pipe(
-        map(v => v)
-      ),
-      {
-        next: () => {},
-        error: () => {}
-      }
-    )
-
-    // send notifies
-    this.$e.message.next('init');
-  }
-}
-*/
+const IS_DEV = process.env.NODE_ENV === 'development';
 class Service extends Disposable {
-    constructor(args = {}) {
+    constructor(opts, ctx) {
         super();
-        // displayName, for debug
-        this.displayName = '';
-        // actions
-        this.$a = {};
-        // notifies
-        this.$e = {};
-        // init data
-        const data = vue.reactive(args.data || {});
-        const $d = vue.readonly(data);
-        this.data = data;
-        this.$d = $d;
-        // init actions
-        const actions = args.actions || [];
+        this.mutations = {};
+        this.isCommitting = false;
+        this.name = '';
+        this.$actions = {};
+        this.$events = {};
+        const { name = 'Service', strict = false, state = {}, mutations = {}, actions = [], events = [], setup } = opts();
+        this.app = ctx.app;
+        this.name = name;
+        this._vm = vue.reactive({ state });
         actions.forEach((key) => {
-            this.$a[key] = new rxjs.Subject();
+            this.$actions[key] = new rxjs.Subject();
         });
-        // init events
-        const events = args.events || [];
         events.forEach((key) => {
-            this.$e[key] = new rxjs.Subject();
+            this.$events[key] = new rxjs.Subject();
         });
-        // debug
-        // debugs: new action
-        Object.keys(this.$a).forEach((key) => {
-            this.subscribe(this.$a[key], {
+        const mutationKeys = Object.keys(mutations);
+        mutationKeys.forEach((key) => {
+            this.mutations[key] = ((s, p) => {
+                mutations[key](s, p);
+            });
+        });
+        Object.keys(this.$actions).forEach((key) => {
+            this.subscribe(this.$actions[key], {
                 next: (v) => {
-                    debug(`[Service ${this.displayName}]: receive new action [${key}].`, 'info');
+                    debug(`[Service ${this.name}]: receive new action [${key}].`, 'info');
                     debug(v, 'info');
                 }
             });
         });
-        // debugs: new event
-        Object.keys(this.$e).forEach((key) => {
-            this.subscribe(this.$e[key], {
+        Object.keys(this.$events).forEach((key) => {
+            this.subscribe(this.$events[key], {
                 next: (v) => {
-                    debug(`[Service ${this.displayName}]: emit new event [${key}].`, 'info');
+                    debug(`[Service ${this.name}]: emit new event [${key}].`, 'info');
                     debug(v, 'info');
                 }
             });
         });
+        if (strict && IS_DEV) {
+            vue.watch(() => this._vm.state, () => {
+                if (!this.isCommitting) {
+                    console.error(`do not mutate state outside mutation handlers.`);
+                }
+            }, { deep: true, flush: 'sync' });
+        }
+        if (setup) {
+            setup({
+                state: this.state,
+                $actions: this.$actions,
+                $events: this.$events,
+                commit: this.commit.bind(this),
+                dispatch: this.dispatch.bind(this),
+                emit: this.emit.bind(this),
+                on: this.on.bind(this),
+                subscribe: this.subscribe.bind(this)
+            });
+        }
+    }
+    get state() {
+        return this._vm.state;
     }
     subscribe(ob, observer) {
         const subscription = ob.subscribe(observer);
@@ -304,12 +293,41 @@ class Service extends Disposable {
             subscription.unsubscribe();
         });
     }
+    commit(key, payload) {
+        this.isCommitting = true;
+        this.mutations[key](this.state, payload);
+        this.isCommitting = false;
+    }
+    dispatch(key, v) {
+        this.$actions[key].next(v);
+    }
+    emit(key, v) {
+        this.$events[key].next(v);
+    }
+    on(key, fn) {
+        this.subscribe(this.$events[key], {
+            next: (v) => {
+                fn(v);
+            }
+        });
+    }
+}
+function createService(options) {
+    class cls extends Service {
+        constructor(ctx) {
+            super(options, ctx);
+        }
+    }
+    return cls;
 }
 
 const useInjector = (args) => {
     const instance = vue.getCurrentInstance();
     const parentInjector = vue.inject(injectorKey, null);
-    const injector = new Injector(args.providers, parentInjector);
+    const injector = new Injector(args.providers, {
+        parent: parentInjector,
+        app: instance.appContext.app
+    });
     instance[instanceInjectorKey] = injector;
     vue.provide(injectorKey, injector);
 };
@@ -401,6 +419,7 @@ exports.Injector = Injector;
 exports.Service = Service;
 exports.ServiceInjector = ServiceInjector;
 exports.config = config;
+exports.createService = createService;
 exports.debug = debug;
 exports.useGetService = useGetService;
 exports.useInjector = useInjector;
