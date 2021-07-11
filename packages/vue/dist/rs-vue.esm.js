@@ -1,4 +1,4 @@
-import { defineComponent, getCurrentInstance, inject, provide, reactive, watch, onBeforeUnmount, ref } from 'vue';
+import { defineComponent, getCurrentInstance, inject, provide, reactive, watch, computed, onBeforeUnmount, ref } from 'vue';
 import { Subject } from 'rxjs';
 
 const configSettings = {
@@ -219,16 +219,28 @@ const ServiceInjector = defineComponent({
     }
 });
 
+const getPathField = (state, path) => {
+    return path.split(/[.[\]]+/).reduce((prev, key) => prev[key], state);
+};
+const setPathField = (state, path, value) => {
+    path.split(/[.[\]]+/).reduce((prev, key, index, array) => {
+        if (array.length === index + 1) {
+            prev[key] = value;
+        }
+        return prev[key];
+    }, state);
+};
+
 const IS_DEV = process.env.NODE_ENV === 'development';
 class Service extends Disposable {
-    constructor(opts, ctx) {
+    constructor(ctx) {
         super();
         this.mutations = {};
         this.isCommitting = false;
         this.name = '';
         this.$actions = {};
         this.$events = {};
-        const { name = 'Service', strict = false, state = {}, mutations = {}, actions = [], events = [], setup } = opts();
+        const { name = 'Service', strict = process.env.NODE_ENV === 'development', state = {}, mutations = {}, actions = [], events = [] } = this.options();
         this.app = ctx.app;
         this.name = name;
         this._vm = reactive({ state });
@@ -238,10 +250,14 @@ class Service extends Disposable {
         events.forEach((key) => {
             this.$events[key] = new Subject();
         });
-        const mutationKeys = Object.keys(mutations);
+        const mutationsList = Object.assign(Object.assign({}, mutations), { setStateByPath(state, args) {
+                const { path, value } = args;
+                setPathField(state, path, value);
+            } });
+        const mutationKeys = Object.keys(mutationsList);
         mutationKeys.forEach((key) => {
             this.mutations[key] = ((s, p) => {
-                mutations[key](s, p);
+                mutationsList[key](s, p);
             });
         });
         Object.keys(this.$actions).forEach((key) => {
@@ -266,18 +282,6 @@ class Service extends Disposable {
                     console.error(`do not mutate state outside mutation handlers.`);
                 }
             }, { deep: true, flush: 'sync' });
-        }
-        if (setup) {
-            setup({
-                state: this.state,
-                $actions: this.$actions,
-                $events: this.$events,
-                commit: this.commit.bind(this),
-                dispatch: this.dispatch.bind(this),
-                emit: this.emit.bind(this),
-                on: this.on.bind(this),
-                subscribe: this.subscribe.bind(this)
-            });
         }
     }
     get state() {
@@ -307,14 +311,16 @@ class Service extends Disposable {
             }
         });
     }
-}
-function createService(options) {
-    class cls extends Service {
-        constructor(ctx) {
-            super(options, ctx);
-        }
+    vModel(path) {
+        return computed({
+            get: () => {
+                return getPathField(this.state, path);
+            },
+            set: (value) => {
+                this.commit('setStateByPath', { path, value });
+            }
+        });
     }
-    return cls;
 }
 
 const useInjector = (args) => {
@@ -409,4 +415,4 @@ function useRx() {
     };
 }
 
-export { Disposable, InjectionToken, Injector, Service, ServiceInjector, config, createService, debug, useGetService, useInjector, useRx, useService };
+export { Disposable, InjectionToken, Injector, Service, ServiceInjector, config, debug, getPathField, setPathField, useGetService, useInjector, useRx, useService };

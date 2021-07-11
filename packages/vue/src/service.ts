@@ -1,6 +1,7 @@
-import { reactive, watch, App } from 'vue';
+import { reactive, watch, App, computed } from 'vue';
 import { Observable, Subject, PartialObserver } from 'rxjs';
 import { Disposable, debug, InjectionClass, InjectionContext } from './core';
+import { getPathField, setPathField } from './util';
 
 const IS_DEV = process.env.NODE_ENV === 'development';
 
@@ -14,12 +15,9 @@ type Events<E extends Record<string, any>> = {
 
 type Mutation<S> = (state: S, payload: any) => void;
 
-type Payload<M, K extends keyof M> = M[K] extends (
-  state: any,
-  p: infer P
-) => any
-  ? P
-  : never;
+type MS<S, M> = M & {
+  setStateByPath: (state: S, args: { path: string; value: any }) => void;
+};
 
 type Options<
   S extends Record<string, any>,
@@ -33,22 +31,9 @@ type Options<
   mutations?: M;
   actions?: (keyof A)[];
   events?: (keyof E)[];
-  setup?: (ctx: {
-    state: S;
-    $actions: Actions<A>;
-    $events: Events<E>;
-    commit: (key: keyof M, payload: Payload<M, keyof M>) => void;
-    subscribe: <T = any>(
-      ob: Observable<T>,
-      observer?: PartialObserver<T>
-    ) => void;
-    dispatch: <K extends keyof A>(key: K, v: A[K]) => void;
-    emit: <K extends keyof E>(key: K, v: E[K]) => void;
-    on: <K extends keyof E>(key: K, fn: (v: E[K]) => void) => void;
-  }) => void;
 };
 
-export class Service<
+export default abstract class Service<
     S extends Record<string, any> = {},
     A extends Record<string, any> = {},
     E extends Record<string, any> = {},
@@ -58,7 +43,7 @@ export class Service<
   implements InjectionClass
 {
   private _vm: { state: S };
-  private mutations: M = {} as M;
+  private mutations: MS<S, M> = {} as MS<S, M>;
   private isCommitting = false;
   private app: App<Element>;
 
@@ -66,18 +51,19 @@ export class Service<
   $actions: Actions<A> = {} as Actions<A>;
   $events: Events<E> = {} as Events<E>;
 
-  constructor(opts: () => Options<S, A, E, M>, ctx: InjectionContext) {
+  abstract options(): Options<S, A, E, M>;
+
+  constructor(ctx: InjectionContext) {
     super();
 
     const {
       name = 'Service',
-      strict = false,
+      strict = process.env.NODE_ENV === 'development',
       state = {} as S,
-      mutations = {} as M,
+      mutations = {} as MS<S, M>,
       actions = [],
-      events = [],
-      setup
-    } = opts();
+      events = []
+    } = this.options();
 
     this.app = ctx.app;
     this.name = name;
@@ -92,11 +78,18 @@ export class Service<
       this.$events[key] = new Subject<E[typeof key]>();
     });
 
-    const mutationKeys = Object.keys(mutations) as (keyof M)[];
+    const mutationsList: MS<S, M> = {
+      ...mutations,
+      setStateByPath(state, args) {
+        const { path, value } = args;
+        setPathField(state, path, value);
+      }
+    };
+    const mutationKeys = Object.keys(mutationsList) as (keyof MS<S, M>)[];
     mutationKeys.forEach((key) => {
       this.mutations[key] = ((s, p) => {
-        mutations[key](s, p);
-      }) as M[keyof M];
+        mutationsList[key](s, p);
+      }) as MS<S, M>[keyof MS<S, M>];
     });
 
     Object.keys(this.$actions).forEach((key) => {
@@ -128,19 +121,6 @@ export class Service<
         { deep: true, flush: 'sync' }
       );
     }
-
-    if (setup) {
-      setup({
-        state: this.state,
-        $actions: this.$actions,
-        $events: this.$events,
-        commit: this.commit.bind(this),
-        dispatch: this.dispatch.bind(this),
-        emit: this.emit.bind(this),
-        on: this.on.bind(this),
-        subscribe: this.subscribe.bind(this)
-      });
-    }
   }
 
   get state() {
@@ -154,7 +134,10 @@ export class Service<
     });
   }
 
-  commit(key: keyof M, payload: Payload<M, keyof M>) {
+  commit<K extends keyof MS<S, M>>(
+    key: K,
+    payload: Parameters<MS<S, M>[K]>[1]
+  ) {
     this.isCommitting = true;
     this.mutations[key](this.state, payload);
     this.isCommitting = false;
@@ -175,25 +158,15 @@ export class Service<
       }
     });
   }
-}
 
-type ServiceClass<
-  S extends Record<string, any> = {},
-  A extends Record<string, any> = {},
-  E extends Record<string, any> = {},
-  M extends Record<string, Mutation<S>> = {}
-> = new (ctx: InjectionContext) => Service<S, A, E, M>;
-
-export function createService<
-  S extends Record<string, any> = {},
-  A extends Record<string, any> = {},
-  E extends Record<string, any> = {},
-  M extends Record<string, Mutation<S>> = {}
->(options: () => Options<S, A, E, M>): ServiceClass<S, A, E, M> {
-  class cls extends Service<S, A, E, M> {
-    constructor(ctx: InjectionContext) {
-      super(options, ctx);
-    }
+  vModel(path: string) {
+    return computed({
+      get: () => {
+        return getPathField(this.state, path);
+      },
+      set: (value: any) => {
+        this.commit('setStateByPath', { path, value });
+      }
+    });
   }
-  return cls;
 }

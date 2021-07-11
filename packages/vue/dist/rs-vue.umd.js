@@ -222,16 +222,28 @@
       }
   });
 
+  const getPathField = (state, path) => {
+      return path.split(/[.[\]]+/).reduce((prev, key) => prev[key], state);
+  };
+  const setPathField = (state, path, value) => {
+      path.split(/[.[\]]+/).reduce((prev, key, index, array) => {
+          if (array.length === index + 1) {
+              prev[key] = value;
+          }
+          return prev[key];
+      }, state);
+  };
+
   const IS_DEV = "development" === 'development';
   class Service extends Disposable {
-      constructor(opts, ctx) {
+      constructor(ctx) {
           super();
           this.mutations = {};
           this.isCommitting = false;
           this.name = '';
           this.$actions = {};
           this.$events = {};
-          const { name = 'Service', strict = false, state = {}, mutations = {}, actions = [], events = [], setup } = opts();
+          const { name = 'Service', strict = "development" === 'development', state = {}, mutations = {}, actions = [], events = [] } = this.options();
           this.app = ctx.app;
           this.name = name;
           this._vm = vue.reactive({ state });
@@ -241,10 +253,14 @@
           events.forEach((key) => {
               this.$events[key] = new rxjs.Subject();
           });
-          const mutationKeys = Object.keys(mutations);
+          const mutationsList = Object.assign(Object.assign({}, mutations), { setStateByPath(state, args) {
+                  const { path, value } = args;
+                  setPathField(state, path, value);
+              } });
+          const mutationKeys = Object.keys(mutationsList);
           mutationKeys.forEach((key) => {
               this.mutations[key] = ((s, p) => {
-                  mutations[key](s, p);
+                  mutationsList[key](s, p);
               });
           });
           Object.keys(this.$actions).forEach((key) => {
@@ -269,18 +285,6 @@
                       console.error(`do not mutate state outside mutation handlers.`);
                   }
               }, { deep: true, flush: 'sync' });
-          }
-          if (setup) {
-              setup({
-                  state: this.state,
-                  $actions: this.$actions,
-                  $events: this.$events,
-                  commit: this.commit.bind(this),
-                  dispatch: this.dispatch.bind(this),
-                  emit: this.emit.bind(this),
-                  on: this.on.bind(this),
-                  subscribe: this.subscribe.bind(this)
-              });
           }
       }
       get state() {
@@ -310,14 +314,16 @@
               }
           });
       }
-  }
-  function createService(options) {
-      class cls extends Service {
-          constructor(ctx) {
-              super(options, ctx);
-          }
+      vModel(path) {
+          return vue.computed({
+              get: () => {
+                  return getPathField(this.state, path);
+              },
+              set: (value) => {
+                  this.commit('setStateByPath', { path, value });
+              }
+          });
       }
-      return cls;
   }
 
   const useInjector = (args) => {
@@ -418,8 +424,9 @@
   exports.Service = Service;
   exports.ServiceInjector = ServiceInjector;
   exports.config = config;
-  exports.createService = createService;
   exports.debug = debug;
+  exports.getPathField = getPathField;
+  exports.setPathField = setPathField;
   exports.useGetService = useGetService;
   exports.useInjector = useInjector;
   exports.useRx = useRx;
