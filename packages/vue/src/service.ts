@@ -1,4 +1,4 @@
-import { reactive, watch, App, computed } from 'vue';
+import { reactive, watch, watchEffect, App, computed } from 'vue';
 import { Observable, Subject, PartialObserver } from 'rxjs';
 import { Disposable, debug, InjectionClass, InjectionContext } from './core';
 import { getPathField, setPathField } from './util';
@@ -111,7 +111,7 @@ export default abstract class Service<
     });
 
     if (strict && IS_DEV) {
-      watch(
+      this.watch(
         () => this._vm.state,
         () => {
           if (!this.isCommitting) {
@@ -168,5 +168,21 @@ export default abstract class Service<
         this.commit('setStateByPath', { path, value });
       }
     });
+  }
+
+  watch(...args: Parameters<typeof watch>) {
+    const stop = watch(...args);
+    this.beforeDispose(() => {
+      stop();
+    });
+    return stop;
+  }
+
+  watchEffect(...args: Parameters<typeof watchEffect>) {
+    const stop = watchEffect(...args);
+    this.beforeDispose(() => {
+      stop();
+    });
+    return stop;
   }
 }
