@@ -17,8 +17,8 @@ npm i @reactive-service/react rxjs
 
 `@reactive-service/react`的核心注意包括两部分：
 
-- [响应式的Service](./service.md)。
-- [依赖注入](./di.md)。
+- [响应式的 Service 实现](./service.md)。
+- [依赖注入实现](./di.md)。
 
 详细的api参见[apis](./api.md)。
 

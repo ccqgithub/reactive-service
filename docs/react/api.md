@@ -8,29 +8,29 @@ import { Service, ServiceInjector, useService, useBehavior, useObservable, useOb
 
 ## Service
 
-继承`Service`基类，创建一个服务类。
+`Service`基类，一个内置的服务类，能够很好第跟`rxjs`和`依赖注入`结合使用。
 
 ```tsx
 import { Service } from "@reactive-service/react";
 
-type AppServiceState = {
+type State = {
   loginUser: User | null;
 }
-type AppServiceActions = {
+type Actions = {
   login: LoginParams;
 }
-type AppServiceEvents = {
+type Events = {
   notify: string;
 }
 
 export default class AppService<
-  AppServiceState,
-  AppServiceActions,
-  AppServiceEvents
+  State,
+  Actions,
+  Events
 > {
   testService: TestService;
 
-  constructor({ userService }) {
+  constructor({ userService: getService }) {
     super({
       state: {
         loginUser: null;
@@ -41,18 +41,18 @@ export default class AppService<
   }
 
   // 类里面也能获取已经注入的 service
-  this.testService = userService(TestService);
+  this.testService = getService(TestService);
 }
 ```
 
 这样的服务类实例`service`具有以下属性和方法：
 
 - `service.state`: 服务当前状态（如`service.state.loginUser`）。
-- `service.$$`: 服务的可观察状态，是一个[`BehaviorSubject`](https://rxjs-dev.firebaseapp.com/guide/subject#behaviorsubject)实例，（如`service.$s.loginUser`）。
-- `service.$`: 服务的Actions，是一个[`Subject`](https://rxjs.dev/guide/subject)实例，（如`service.$a.login`）。
+- `service.$s`: 服务的可观察状态，是一个[`BehaviorSubject`](https://rxjs-dev.firebaseapp.com/guide/subject#behaviorsubject)实例，（如`service.$s.loginUser`）。
+- `service.$a`: 服务的Actions，是一个[`Subject`](https://rxjs.dev/guide/subject)实例，（如`service.$a.login`）。
 - `service.$e`: 服务的Events，是一个[`Subject`](https://rxjs.dev/guide/subject)实例，（如`service.$e.notify`）。
-- `service.subscribe(...args)`: 辅助方法，用来在`service`内部订阅[`Observable`](https://rxjs.dev/guide/observable)，通过它产生的订阅，会在`service`销毁时取消订阅。
-- `service.dispose()`: 销毁`service`。
+- `service.subscribe(...args)`: 辅助方法，用来在`service`内部订阅[`Observable`](https://rxjs.dev/guide/observable)，通过它产生的订阅，会在`service`销毁时自动取消订阅。
+- `service.dispose()`: 销毁`service`，如果使用依赖注入，一般不需要主动调用，注入器会自动管理。
 - `service.beforeDispose(fn)`: 添加一个销毁函数，这个函数`fn`会在`service`销毁时执行。
 
 service.subscribe 参数：
@@ -72,6 +72,8 @@ service.subscribe({
 ```
 
 ## ServiceInjector
+
+依赖注入器，用来在组件树中的某处注入服务，供子节点使用。
 
 ```tsx
 import { ServiceInjector } from "@reactive-service/react";
@@ -124,21 +126,28 @@ function Component() {
 
 ## useService
 
+在组件中使用服务。
+
+默认情况下，如果请求的`service`没有被祖先注入过，则会抛出异常。可以传入`{ optional: true }`参数来让注入可选，这样没有提供时不会抛出异常，而是返回`null`。
+
 ```tsx
 import { useService } from "@reactive-service/react";
 
 function Child() {
+  // appService 不会为 null
   const appService = useService(AppService);
+  // logger 可能为 null
   const logger = useService(Logger, { optional: true });
+  if (logger) {
+    //
+  }
   //...
 }
 ```
 
-> 默认情况下，如果请求的`service`没有被祖先注入过，则会抛出异常。可以传入`{ optional: true }`参数来让注入可选，这样没有提供时不会抛出异常，而是返回`null`。
-
 ## useBehavior
 
-订阅`BehaviorSubject`的值作为组件状态。
+订阅`BehaviorSubject`的值作为组件状态（对于上面`Service`中的`state`）。
 
 ```tsx
 import { useService, useBehavior } from "@reactive-service/react";
@@ -217,14 +226,22 @@ const testService = injector.get(TestService);
 
 ## InjectionToken
 
-```tsx
+用来注入`非class`的值，比如一个简单的对象，字符串等。
+
+```ts
+// base-url-token.ts
 import { ServiceInjector InjectionToken } from "@reactive-service/react";
 
+const Token = new InjectionToken<string>("/test");;
+
+export default Token;
+```
+
+```tsx
+import { ServiceInjector InjectionToken, useService } from "@reactive-service/react";
+import BaseUrlToken from './base-url-token';
+
 function Component() {
-  const BaseUrlToken = useState(() => {
-    const token = new InjectionToken<string>("/xxx");
-    return token;
-  });
   const [providers] = useState(() => [BaseUrlToken]);
 
   return (
@@ -233,9 +250,20 @@ function Component() {
     </ServiceInjector>
   );
 }
+
+function Child() {
+  const baseUrl = useService(BaseUrlToken);
+  
+  //...
+}
 ```
 
 ## config
+
+内部配置：
+
+- `logLevel`： 错误等级，`info`、`warn`、`error`、`never`。
+- `log`: `log`函数。
 
 ```tsx
 import { config } from "@reactive-service/react";
@@ -247,8 +275,3 @@ config({
   }
 });
 ```
-
-内部配置：
-
-- `logLevel`： 错误等级，`info`、`warn`、`error`、`never`。
-- `log`: `log`函数。

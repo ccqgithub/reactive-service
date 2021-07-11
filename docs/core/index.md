@@ -1,3 +1,0 @@
-# @reactive-service/core
-
-todo

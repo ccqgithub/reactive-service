@@ -1,25 +1,25 @@
-# 响应式 Service
+# 响应式的 Service 实现
 
 ## 第一步：简单的状态共享
 
 ```tsx
 const appService = {
-  data: {
+  state: {
     loginUser: null,
     messages: []
   },
 
   setLoginUser(user) {
-    this.data.loginUser = user;
+    this.state.loginUser = user;
   },
 
   pushMessage(msg) {
-    this.data.messages.push(msg);
+    this.state.messages.push(msg);
   }
 }
 
 function App() {
-  const loginUser = service.data.loginUser;
+  const loginUser = service.state.loginUser;
   return (
     <>
       <div>Login User: {loginUser.name}</div>
@@ -45,7 +45,7 @@ function LoginBox() {
 }
 
 function MessageBox({ id }) {
-  const messages = service.data.;
+  const messages = service.state.messages;
   return (
     <div>
       {messages.map((msg) => (
@@ -56,11 +56,11 @@ function MessageBox({ id }) {
 }
 ```
 
-这样达到了状态共享的目的，但是又一个问题：那就是我们改变`service.data`的时候，并不会触发组件的更新。
+这样达到了状态共享的目的，但是有一个问题：那就是只有初次渲染是正确的，当我们更新共享数据`service.state`的时候，并不会触发相应组件的更新。
 
 别急，我们看第二步。
 
-## 第二步：数据响应
+## 第二步：让数据响应
 
 在`vue`中，因为框架本身带数据响应特性，第一步里面的例子就能够实现状态共享的目的。但是在`react`中，我们不得不借助`mobx`之类的框架。
 
@@ -71,28 +71,34 @@ function MessageBox({ id }) {
 - 保持最近的状态：每个观察者订阅它的时候，会得到它最近的值。
 - 推送新的状态：每当它接收一个新的值时，会将新的值推送给所有订阅了它的观察者。
 
-这是不是和`state`很像？没错，其实它就是一个天然的`state`好助手，借助`hooks`，我们能够这样使用。
+这是不是和`state`很像？没错，其实它就是一个天然的`state`好助手，借助`hooks`，我们能够如下这样使用：
+
+1. 使用`rxjs`创建数据源。
+2. 在`react`组件中，使用`hooks`订阅数据源，在订阅的回调函数中`setState`。
+3. 在组件卸载时取消订阅。
 
 ```tsx
 const appService = {
-  data: {
+  state: {
     loginUser: new BehaviorSubject(null),
     messages: new BehaviorSubject([]),
   },
 
   setLoginUser(user) {
-    this.data.loginUser.next(user);
+    // 更新 state
+    this.state.loginUser.next(user);
   },
 
   pushMessage(msg) {
-    this.data.messages.next([
+    // 更新 state
+    this.state.messages.next([
       ...this.data.messages.value,
       msg
     ]);
   }
 }
 
-// 组件安装时订阅，卸载时取消订阅
+// 组件安装时订阅数据源，卸载时取消订阅
 const useBehavior = (subject) => {
   const [state, setState] = useState(subject.value);
   useEffect(() => {
@@ -108,7 +114,7 @@ const useBehavior = (subject) => {
 }
 
 function App() {
-  const loginUser = useBehavior(service.data.loginUser);
+  const loginUser = useBehavior(service.state.loginUser);
   return (
     <>
       <div>Login User: {loginUser.name}</div>
@@ -134,7 +140,7 @@ function LoginBox() {
 }
 
 function MessageBox({ id }) {
-  const messages = useBehavior(service.data.messages);
+  const messages = useBehavior(service.state.messages);
   return (
     <div>
       {messages.map((msg) => (
@@ -145,7 +151,7 @@ function MessageBox({ id }) {
 }
 ```
 
-这样，我们轻易就实现了`mobx`的功能，使用起来还很简单（前提是熟悉rxjs，当然你可能觉得学习rxjs很麻烦，但是rxjs的好处远远不止这里，后面会有更多介绍）。
+这样，我们轻易就实现了`mobx`的类似功能，使用起来还能更好第利用rxjs的优势（前提是熟悉rxjs，当然你可能觉得学习rxjs很麻烦，但是rxjs的好处远远不止这里，后面会有更多介绍）。
 
 这种做法与[`redux`](https://github.com/reduxjs/redux)和[`unstated-next`](https://github.com/jamiebuilds/unstated-next)之类的工具比起来，有如下好处：
 
@@ -248,7 +254,7 @@ function Search() {
 class AppService {
   subscriptions = [];
 
-  data = {
+  state = {
     loginUser: new BehaviorSubject(null),
     messages: new BehaviorSubject([])
   }
@@ -292,7 +298,7 @@ class AppService {
 const appService = new AppService();
 
 function App() {
-  const loginUser = useBehavior(appService.data.loginUser);
+  const loginUser = useBehavior(appService.state.loginUser);
   // app 卸载时，销毁service，清理订阅等
   useEffect(() => {
     return () => {
@@ -318,7 +324,7 @@ function App() {
 
 经过思考以往的项目经验，我发现一个`service`需要对外暴露的部分，只包括下面几个：
 
-- State：能订阅的状态值，既保持最近一次的值，又能够接收新的值，典型的普通状态值。
+- State：能订阅的状态值，既保持最近一次的值，又能够接收新的值。
 - Event：能订阅的事件（或通知），我们不需要知道以前的值，只需要我们订阅后的值，比如消息通知的处理。
 - Action：外界想`service`传递数据，通知`service`改变。
 
@@ -343,7 +349,7 @@ npm i rxjs @reactive-service/react
 // services/app.ts
 import { Service } from "@reactive-service/react";
 
-type AppServiceState = {
+type State = {
   loginUser: {
     id: string;
     name: string;
@@ -351,21 +357,21 @@ type AppServiceState = {
   messages: string[];
 };
 
-type AppServiceEvents = {
-  error: Error;
-}
-
-type AppServiceActions = {
+type Actions = {
   login: {
     username: string;
     password: string;
   }
 }
 
+type Events = {
+  error: Error;
+}
+
 export class AppService extends Service<
-  AppServiceState,
-  AppServiceEvents,
-  AppServiceActions
+  State,
+  Events,
+  Actions
 > {
   constructor() {
     // 初始化
@@ -429,9 +435,9 @@ function App() {
 
 这样创建的`service`实例会暴露以下几个方法：
 
-- `service.$$`: state集合。
+- `service.$s`: state集合。
 - `service.$e`: events集合。
-- `service.$`: actions集合。
+- `service.$a`: actions集合。
 
 更多详细信息，请看[apis](./api.md);
 
