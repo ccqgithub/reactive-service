@@ -1,10 +1,9 @@
 import * as util from '../util';
-import { FieldRule, RSFormData } from '../types';
+import { FieldRule } from '../types';
 
 function pattern(
   rule: FieldRule,
   value: any,
-  source: RSFormData,
   options: Record<string, any>
 ): string[] {
   if (!rule.pattern) return [];
@@ -20,7 +19,7 @@ function pattern(
       errors.push(
         util.format(
           options.messages.pattern.mismatch,
-          options.fullField,
+          options.name,
           value,
           rule.pattern
         )

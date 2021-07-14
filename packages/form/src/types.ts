@@ -18,7 +18,6 @@ export type FieldRule = {
 export type Validator = (
   rule: FieldRule,
   value: any,
-  source: RSFormData,
   Options: Record<string, any>
 ) => string[] | Promise<string[]> | Observable<string[]>;
 

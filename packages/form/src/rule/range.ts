@@ -1,10 +1,9 @@
 import * as util from '../util';
-import { FieldRule, RSFormData } from '../types';
+import { FieldRule } from '../types';
 
 function range(
   rule: FieldRule,
   value: any,
-  source: RSFormData,
   options: Record<string, any>
 ): string[] {
   const errors: string[] = [];
@@ -46,29 +45,20 @@ function range(
   if (len) {
     if (val !== rule.len) {
       errors.push(
-        util.format(options.messages[key].len, options.fullField, rule.len)
+        util.format(options.messages[key].len, options.name, rule.len)
       );
     }
   } else if (min && !max && val < (rule.min as number)) {
-    errors.push(
-      util.format(options.messages[key].min, options.fullField, rule.min)
-    );
+    errors.push(util.format(options.messages[key].min, options.name, rule.min));
   } else if (max && !min && val > (rule.max as number)) {
-    errors.push(
-      util.format(options.messages[key].max, options.fullField, rule.max)
-    );
+    errors.push(util.format(options.messages[key].max, options.name, rule.max));
   } else if (
     min &&
     max &&
     (val < (rule.min as number) || val > (rule.max as number))
   ) {
     errors.push(
-      util.format(
-        options.messages[key].range,
-        options.fullField,
-        rule.min,
-        rule.max
-      )
+      util.format(options.messages[key].range, options.name, rule.min, rule.max)
     );
   }
 

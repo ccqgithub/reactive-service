@@ -1,13 +1,13 @@
 import * as util from '../util';
-import required from './required';
-import { FieldRule, RSFormData } from '../types';
+import { FieldRule } from '../types';
 
 /* eslint max-len:0 */
 
 const pattern = {
   // http://emailregex.com/
-  // eslint-disable-next-line no-useless-escape
-  email: /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
+  email:
+    // eslint-disable-next-line no-useless-escape
+    /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
   url: new RegExp(
     '^(?!mailto:)(?:(?:http|https|ftp)://|//)(?:\\S+(?::\\S*)?@)?(?:(?:(?:[1-9]\\d?|1\\d\\d|2[01]\\d|22[0-3])(?:\\.(?:1?\\d{1,2}|2[0-4]\\d|25[0-5])){2}(?:\\.(?:[0-9]\\d?|1\\d\\d|2[0-4]\\d|25[0-4]))|(?:(?:[a-z\\u00a1-\\uffff0-9]+-*)*[a-z\\u00a1-\\uffff0-9]+)(?:\\.(?:[a-z\\u00a1-\\uffff0-9]+-*)*[a-z\\u00a1-\\uffff0-9]+)*(?:\\.(?:[a-z\\u00a1-\\uffff]{2,})))|localhost)(?::\\d{2,5})?(?:(/|\\?|#)[^\\s]*)?$',
     'i'
@@ -73,7 +73,6 @@ const types = {
 function type(
   rule: FieldRule,
   value: any,
-  source: RSFormData,
   options: Record<string, any>
 ): string[] {
   const errors: string[] = [];
@@ -102,17 +101,13 @@ function type(
   if (custom.indexOf(ruleType) > -1) {
     if (!(types as any)[ruleType](value)) {
       errors.push(
-        util.format(
-          options.messages.types[ruleType],
-          options.fullField,
-          ruleType
-        )
+        util.format(options.messages.types[ruleType], options.name, ruleType)
       );
     }
     // straight typeof check
   } else if (ruleType && typeof value !== ruleType) {
     errors.push(
-      util.format(options.messages.types[ruleType], options.fullField, ruleType)
+      util.format(options.messages.types[ruleType], options.name, ruleType)
     );
   }
 
