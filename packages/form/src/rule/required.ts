@@ -1,4 +1,5 @@
-import * as util from '../util';
+import format from '../util/format';
+import { isEmptyValue } from '../util/utils';
 import { FieldRule } from '../types';
 
 function required(
@@ -9,8 +10,8 @@ function required(
   if (!rule.required) return [];
 
   const errors: string[] = [];
-  if (util.isEmptyValue(value, rule.type)) {
-    errors.push(util.format(options.messages.required, options.name));
+  if (isEmptyValue(value, rule.type)) {
+    errors.push(format(options.messages.required, options.name));
   }
 
   return errors;

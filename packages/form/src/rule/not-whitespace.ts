@@ -1,5 +1,5 @@
-import * as util from '../util';
 import { FieldRule } from '../types';
+import format from '../util/format';
 
 function notWhitespace(
   rule: FieldRule,
@@ -10,7 +10,7 @@ function notWhitespace(
 
   const errors: string[] = [];
   if (/^\s+$/.test(value) || value === '') {
-    errors.push(util.format(options.messages.notWhitespace, options.name));
+    errors.push(format(options.messages.notWhitespace, options.name));
   }
 
   return errors;

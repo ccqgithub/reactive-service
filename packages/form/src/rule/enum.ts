@@ -1,5 +1,5 @@
-import * as util from '../util';
 import { FieldRule } from '../types';
+import format from '../util/format';
 
 const ENUM = 'enum';
 
@@ -13,7 +13,7 @@ function enumerable(
   const errors: string[] = [];
   if ((rule[ENUM] as string[]).indexOf(value) === -1) {
     errors.push(
-      util.format(
+      format(
         options.messages[ENUM],
         options.name,
         (rule[ENUM] as string[]).join(', ')

@@ -1,74 +1,7 @@
-import * as util from '../util';
 import { FieldRule } from '../types';
-
-/* eslint max-len:0 */
-
-const pattern = {
-  // http://emailregex.com/
-  email:
-    // eslint-disable-next-line no-useless-escape
-    /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
-  url: new RegExp(
-    '^(?!mailto:)(?:(?:http|https|ftp)://|//)(?:\\S+(?::\\S*)?@)?(?:(?:(?:[1-9]\\d?|1\\d\\d|2[01]\\d|22[0-3])(?:\\.(?:1?\\d{1,2}|2[0-4]\\d|25[0-5])){2}(?:\\.(?:[0-9]\\d?|1\\d\\d|2[0-4]\\d|25[0-4]))|(?:(?:[a-z\\u00a1-\\uffff0-9]+-*)*[a-z\\u00a1-\\uffff0-9]+)(?:\\.(?:[a-z\\u00a1-\\uffff0-9]+-*)*[a-z\\u00a1-\\uffff0-9]+)*(?:\\.(?:[a-z\\u00a1-\\uffff]{2,})))|localhost)(?::\\d{2,5})?(?:(/|\\?|#)[^\\s]*)?$',
-    'i'
-  ),
-  hex: /^#?([a-f0-9]{6}|[a-f0-9]{3})$/i
-};
-
-const types = {
-  integer(value: any) {
-    return types.number(value) && parseInt(value, 10) === value;
-  },
-  float(value: any) {
-    return types.number(value) && !types.integer(value);
-  },
-  array(value: any) {
-    return Array.isArray(value);
-  },
-  regexp(value: any) {
-    if (value instanceof RegExp) {
-      return true;
-    }
-    try {
-      return !!new RegExp(value);
-    } catch (e) {
-      return false;
-    }
-  },
-  date(value: any) {
-    return (
-      typeof value.getTime === 'function' &&
-      typeof value.getMonth === 'function' &&
-      typeof value.getYear === 'function' &&
-      !isNaN(value.getTime())
-    );
-  },
-  number(value: any) {
-    if (isNaN(value)) {
-      return false;
-    }
-    return typeof value === 'number';
-  },
-  object(value: any) {
-    return typeof value === 'object' && !types.array(value);
-  },
-  method(value: any) {
-    return typeof value === 'function';
-  },
-  email(value: any) {
-    return (
-      typeof value === 'string' &&
-      !!value.match(pattern.email) &&
-      value.length < 255
-    );
-  },
-  url(value: any) {
-    return typeof value === 'string' && !!value.match(pattern.url);
-  },
-  hex(value: any) {
-    return typeof value === 'string' && !!value.match(pattern.hex);
-  }
-};
+import { isEmptyValue } from '../util/utils';
+import isType from '../util/is-type';
+import format from '../util/format';
 
 function type(
   rule: FieldRule,
@@ -80,7 +13,7 @@ function type(
 
   if (!ruleType) return errors;
 
-  if (util.isEmptyValue(value, rule.type)) {
+  if (isEmptyValue(value, ruleType)) {
     return errors;
   }
 
@@ -99,15 +32,15 @@ function type(
   ];
 
   if (custom.indexOf(ruleType) > -1) {
-    if (!(types as any)[ruleType](value)) {
+    if (!isType(value, ruleType)) {
       errors.push(
-        util.format(options.messages.types[ruleType], options.name, ruleType)
+        format(options.messages.types[ruleType], options.name, ruleType)
       );
     }
     // straight typeof check
   } else if (ruleType && typeof value !== ruleType) {
     errors.push(
-      util.format(options.messages.types[ruleType], options.name, ruleType)
+      format(options.messages.types[ruleType], options.name, ruleType)
     );
   }
 

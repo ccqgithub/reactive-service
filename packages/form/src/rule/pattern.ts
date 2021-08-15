@@ -1,5 +1,5 @@
-import * as util from '../util';
 import { FieldRule } from '../types';
+import format from '../util/format';
 
 function pattern(
   rule: FieldRule,
@@ -17,7 +17,7 @@ function pattern(
     rule.pattern.lastIndex = 0;
     if (!rule.pattern.test(value)) {
       errors.push(
-        util.format(
+        format(
           options.messages.pattern.mismatch,
           options.name,
           value,
@@ -29,7 +29,7 @@ function pattern(
     const _pattern = new RegExp(rule.pattern);
     if (!_pattern.test(value)) {
       errors.push(
-        util.format(
+        format(
           options.messages.pattern.mismatch,
           options.fullField,
           value,

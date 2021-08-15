@@ -1,296 +1,132 @@
-import { concat, EMPTY, from, Observable, of, Subject, zip } from 'rxjs';
+import { from, Subject, BehaviorSubject, Subscription, of } from 'rxjs';
 import {
   catchError,
-  reduce,
   switchMap,
   tap,
+  concatMap,
   map,
-  concatMap
+  reduce
 } from 'rxjs/operators';
+import messages from './util/messages';
 import builtinRules from './rule';
-import messages from './messages';
-import RSForm from './form';
 import ValidateError from './error';
-import { RSFormData, FieldRule, FieldSchema } from './types';
+import { FieldRule } from './types';
 
-export type RSFieldWaiting = {
-  promise: Promise<ValidateError[]>;
-  resolve: (errors: ValidateError[]) => void;
+type FieldState<T> = {
+  // 默认值
+  defaultValue: T;
+  // 字段的值
+  value: T;
+  // 字段验证通过状态
+  valid: boolean;
+  // 字段值被改变过
+  dirty: boolean;
+  // 字段是否被操作过
+  touched: boolean;
+  // 字段是否正在验证
+  validating: boolean;
+  // 字段的错误
+  errors: Error[];
 };
 
-export type RSFieldOptions<D> = {
-  parent?: RSField<D>;
-  form: RSForm<D>;
-  namePath: string;
-  index: string;
-};
+type FieldResolve<T> = (state: FieldState<T>) => void;
 
-export default class RSField<D extends RSFormData> {
-  private namePath: string;
-  private ruleValue: any;
-  private rules: FieldRule[];
-  private reducer: (data: D, value: any) => D;
+class Field<T> {
+  // 字段名称，在查看调试信息时很有用
+  name: string;
+  // 字段的状态
+  $state: BehaviorSubject<FieldState<T>>;
+  // 为True时，如果第一个规则验证失败，则不再验证其他规则
+  private first: boolean;
+  // 字段的验证规则
+  private rules: any[] = [];
+  // 等到验证结果的回调
+  private waitings: FieldResolve<T>[] = [];
+  // 上一次验证的值，用来防止重复验证同一个值，提升效率
+  private lastValidate?: T;
+  // 验证流
+  private $validate: Subject<void> = new Subject();
+  // 验证流的订阅
+  private sub: Subscription | null = null;
 
-  private parent: RSField<D> | null;
-  private form: RSForm<D>;
-  private waiting: RSFieldWaiting | null = null;
-  private disposers: (() => void)[] = [];
+  constructor(args: {
+    name: string;
+    defaultValue: T;
+    rules: any[];
+    first: boolean;
+  }) {
+    const { name = 'Field', defaultValue, rules = [], first = true } = args;
 
-  fields: Record<string, RSField<D>> | null = null;
-  errors: ValidateError[] = [];
-  validating = false;
-  touched = false;
-  dirty = false;
-
-  validate$: Subject<any> = new Subject();
-
-  get fieldErrors(): ValidateError[] {
-    const fields = this.fields || {};
-    let errs: ValidateError[] = [];
-    Object.keys(fields).forEach((key) => {
-      const { errors, fieldErrors } = fields[key];
-      errs = [...errs, ...errors, ...fieldErrors];
-    });
-    return errs;
-  }
-
-  get needValidate() {
-    return (
-      this.form.canValidate &&
-      ((this.form.options.validateOnFieldTouched &&
-        this.touched &&
-        !this.waiting) ||
-        this.dirty)
-    );
-  }
-
-  constructor(schema: FieldSchema<D>, options: RSFieldOptions<D>) {
-    const { ruleValue, rules = [], reducer = (data) => data } = schema;
-    const { namePath, form, parent } = options;
-
-    this.ruleValue = ruleValue;
+    this.name = name;
     this.rules = rules;
-    this.reducer = reducer;
-    this.namePath = namePath;
-    this.form = form;
-    this.parent = parent || null;
+    this.first = first;
+    this.$state = new BehaviorSubject<FieldState<T>>({
+      defaultValue,
+      value: defaultValue,
+      valid: true,
+      dirty: false,
+      touched: false,
+      validating: false,
+      errors: []
+    });
 
-    this.setSchema(schema);
+    this.resetSubscribe();
+  }
 
-    // validate
-    const subscription = this.validate$
+  get state() {
+    return this.$state.value;
+  }
+
+  private resetSubscribe() {
+    if (this.sub) this.sub.unsubscribe();
+    this.updateState({ validating: false });
+    this.lastValidate = undefined;
+    this.sub = this.$validate
       .pipe(
         tap(() => {
-          this.validating = true;
-          this.dirty = false;
-          // waiting
-          const waiting: RSFieldWaiting = {} as RSFieldWaiting;
-          waiting.promise = new Promise((resolve) => {
-            waiting.resolve = resolve;
-          });
-          this.waiting = waiting;
-          this.form.onChangeStatus();
+          this.lastValidate = this.state.value;
+          this.updateState({ validating: true });
         }),
         switchMap(() => {
-          return this.validateAll();
+          return from(this.validateRules());
         }),
-        tap((errors) => {
-          this.validating = false;
-          this.errors = [...errors];
-          this.waiting?.resolve(errors);
-          this.form.onChangeStatus();
+        tap((errs) => {
+          this.updateState({
+            validating: false,
+            errors: errs,
+            valid: !errs.length
+          });
+          this.waitings.forEach((resolve) => {
+            resolve(this.state);
+          });
+          this.waitings = [];
         }),
-        catchError((error, caught) => {
+        catchError((err, caught) => {
+          console.error && console.error(err);
           return caught;
         })
       )
       .subscribe();
-    this.disposers.push(() => {
-      subscription.unsubscribe();
+  }
+
+  private updateState(s: Partial<FieldState<T>>) {
+    this.$state.next({
+      ...this.state,
+      ...s
     });
-
-    // 如果表单验证过，则字段初始化时候就验证
-    if (this.form.touched) {
-      this.validate$.next();
-    }
-  }
-
-  setTouch() {
-    if (this.touched) return;
-    this.touched = true;
-    this.upTouch();
-    this.downTouch();
-    origin && this.form.onChangeStatus();
-  }
-
-  upTouch() {
-    this.touched = true;
-    this.parent?.upTouch();
-  }
-
-  downTouch() {
-    this.touched = true;
-    if (this.fields) {
-      Object.keys(this.fields).forEach((key) => {
-        (this.fields as Record<string, RSField<D>>)[key].downTouch();
-      });
-    }
-  }
-
-  onChange(value: any) {
-    // touched
-    this.setTouch();
-    // dirty
-    this.setDirty();
-    // update form data
-    console.log('===');
-    this.form.onUpdate(this.reducer(this.form.data, value));
-  }
-
-  setDirty() {
-    if (this.dirty) return;
-    this.dirty = true;
-    this.upDirty();
-    this.downDirty();
-  }
-
-  upDirty() {
-    this.dirty = true;
-    this.parent?.upDirty();
-  }
-
-  downDirty() {
-    this.dirty = true;
-    if (this.fields) {
-      Object.keys(this.fields).forEach((key) => {
-        (this.fields as Record<string, RSField<D>>)[key].downDirty();
-      });
-    }
-  }
-
-  validate(fromFields = false) {
-    if (!this.waiting || this.dirty) {
-      if (fromFields) {
-        this.validate$.next();
-      } else {
-        this.upValidate();
-      }
-    }
-    return (this.waiting as RSFieldWaiting).promise;
-  }
-
-  upValidate() {
-    this.validate$.next();
-    this.parent?.upValidate();
-  }
-
-  checkValidate() {
-    if (this.needValidate) {
-      this.validate$.next();
-    }
-    if (this.fields) {
-      Object.keys(this.fields).forEach((key) => {
-        (this.fields as Record<string, RSField<D>>)[key].checkValidate();
-      });
-    }
-  }
-
-  forceValidate(fromFields = false) {
-    if (fromFields) {
-      this.validate$.next();
-    } else {
-      this.upValidate();
-    }
-    return (this.waiting as RSFieldWaiting).promise;
-  }
-
-  updateSchema(schema: FieldSchema<D>) {
-    const { ruleValue, rules = [] } = schema;
-    this.rules = rules;
-    this.ruleValue = ruleValue;
-    this.setSchema(schema);
-  }
-
-  dispose() {
-    this.disposers.forEach((disposer) => {
-      disposer();
-    });
-    this.disposers = [];
-    if (this.fields) {
-      Object.keys(this.fields).forEach((key) => {
-        (this.fields as Record<string, RSField<D>>)[key].dispose();
-      });
-    }
-  }
-
-  private setSchema(schema: FieldSchema<D>) {
-    const newFields: Record<string, FieldSchema<D> & { index: string }> = {};
-    const fields = schema.fields;
-    if (Array.isArray(fields)) {
-      fields.forEach((item, index) => {
-        if (!item.key) throw new Error('Array field need a key property!');
-        newFields[item.key] = { ...item, index: `${index}` };
-      });
-    } else if (typeof fields === 'object' && fields !== null) {
-      Object.keys(fields).forEach((key) => {
-        newFields[key] = {
-          ...fields[key],
-          key,
-          index: key
-        };
-      });
-    }
-
-    const oldKeys = Object.keys(this.fields || {});
-    const newKeys = Object.keys(newFields);
-
-    if (this.fields) {
-      const fields = this.fields;
-      oldKeys.forEach((key) => {
-        if (newKeys.indexOf(key) === -1) {
-          fields[key].dispose();
-          delete fields[key];
-        }
-      });
-    }
-
-    if (newKeys.length) {
-      if (!this.fields) this.fields = {};
-    } else {
-      this.fields = null;
-    }
-
-    if (this.fields) {
-      const fields = this.fields;
-      newKeys.forEach((key) => {
-        if (oldKeys.indexOf(key) === -1) {
-          fields[key] = new RSField<D>(newFields[key], {
-            parent: this,
-            form: this.form,
-            namePath: this.namePath
-              ? `${this.namePath}.${newFields[key].index}`
-              : newFields[key].index,
-            index: newFields[key].index
-          });
-        } else {
-          fields[key].updateSchema(newFields[key]);
-        }
-      });
-    }
   }
 
   private validateRules() {
-    const { ruleValue, rules, form } = this;
-    if (!rules.length) return EMPTY;
-    // firstRuleError
-    const firstRuleError = form.options.firstRuleError;
+    const { rules, state, first } = this;
+    if (!rules.length) return of([]);
     let hasError = false;
+
     return of(...rules).pipe(
       concatMap((rule) => {
         return of('').pipe(
           switchMap(() => {
-            if (hasError && firstRuleError) return EMPTY;
-            return this.validateRule(rule, ruleValue, form.data);
+            if (hasError && first) return of([]);
+            return this.validateRule(rule, state.value);
           }),
           tap((errors) => {
             if (errors.length) hasError = true;
@@ -300,14 +136,19 @@ export default class RSField<D extends RSFormData> {
       reduce<string[]>((prev, cur) => prev.concat(...cur), []),
       map((errors) => {
         return errors.map((err) => {
-          return new ValidateError(err, this.namePath);
+          return new ValidateError(err, this.name);
         });
       })
     );
   }
 
-  private validateRule(rule: FieldRule, value: any, source: RSFormData) {
+  private validateRule(rule: FieldRule, value: any) {
     const errors: string[] = [];
+    const validateMessages = {
+      ...messages,
+      ...(rule.messages || {})
+    };
+    const customMessage = rule.message;
     const ruleKeys = [
       'required',
       'type',
@@ -318,64 +159,82 @@ export default class RSField<D extends RSFormData> {
     ];
     ruleKeys.forEach((key) => {
       const ruleFunc = builtinRules[key as keyof typeof builtinRules];
-      const customMessage = (rule.messages || {})[key];
-      let errs = ruleFunc(rule, value, source, {
-        messages,
-        fullField: this.namePath
+      const errs = ruleFunc(rule, value, {
+        messages: validateMessages,
+        name: this.name
       });
-      if (errs.length && customMessage) {
-        errs = [customMessage];
-      }
       errors.push(...errs);
     });
 
-    let v$: Observable<string[]> | null = null;
-
-    if (rule.validator) {
-      const res = rule.validator(rule, value, source, {
-        messages,
-        fullField: this.namePath
-      });
-      if (res instanceof Observable) {
-        v$ = res;
-      } else if (res instanceof Promise) {
-        v$ = from(res);
-      } else {
-        v$ = of(res);
-      }
-    }
-
-    if (v$) {
-      return v$.pipe(
-        map((errs) => {
-          return errors.concat(...errs);
-        }),
-        map((errs) => {
-          if (rule.message) return [rule.message];
-          return errs;
-        })
-      );
-    }
-
-    return of(errors.length && rule.message ? [rule.message] : errors);
-  }
-
-  private validateFields() {
-    const fields = this.fields || {};
-    const keys = Object.keys(fields);
-    const arr = keys.map((key) => {
-      return from(fields[key].validate(true));
-    });
-    return zip(...arr).pipe(
-      map((arr) => {
-        return arr.reduce((prev, cur) => [...prev, ...cur], []);
+    return of(errors).pipe(
+      switchMap((errors) => {
+        if (!rule.validator) return of(errors);
+        const res = rule.validator(rule, value, {
+          messages: validateMessages,
+          name: this.name
+        });
+        return from(res).pipe(
+          map((errs) => {
+            return [...errors, ...errs];
+          })
+        );
+      }),
+      map((errs) => {
+        return customMessage && errs.length ? [customMessage] : errs;
       })
     );
   }
 
-  private validateAll(): Observable<ValidateError[]> {
-    return concat(this.validateRules(), this.validateFields()).pipe(
-      reduce<ValidateError[]>((prev, cur) => prev.concat(...cur), [])
-    );
+  setTouched() {
+    this.updateState({
+      touched: true
+    });
+  }
+
+  setValue(
+    v: T,
+    args: {
+      shouldDirty?: boolean;
+    } = {}
+  ) {
+    const { value, dirty } = this.state;
+    const { shouldDirty = value !== v } = args;
+
+    this.updateState({
+      value: value,
+      dirty: shouldDirty || dirty
+    });
+
+    this.validate();
+  }
+
+  reset(args: { defaultValue: T }) {
+    this.$state.next({
+      defaultValue: args.defaultValue,
+      value: args.defaultValue,
+      valid: true,
+      dirty: false,
+      touched: false,
+      validating: false,
+      errors: []
+    });
+    this.resetSubscribe();
+  }
+
+  validate(force = false) {
+    const needValidate = this.lastValidate !== this.state.value;
+    if (needValidate || force) this.$validate.next();
+
+    const promise = new Promise<FieldState<T>>((resolve) => {
+      if (this.state.validating) {
+        this.waitings.push(resolve);
+      } else {
+        resolve(this.state);
+      }
+    });
+
+    return promise;
   }
 }
+
+export default Field;

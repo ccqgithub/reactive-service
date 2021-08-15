@@ -1,5 +1,5 @@
-import * as util from '../util';
 import { FieldRule } from '../types';
+import format from '../util/format';
 
 function range(
   rule: FieldRule,
@@ -44,21 +44,19 @@ function range(
   }
   if (len) {
     if (val !== rule.len) {
-      errors.push(
-        util.format(options.messages[key].len, options.name, rule.len)
-      );
+      errors.push(format(options.messages[key].len, options.name, rule.len));
     }
   } else if (min && !max && val < (rule.min as number)) {
-    errors.push(util.format(options.messages[key].min, options.name, rule.min));
+    errors.push(format(options.messages[key].min, options.name, rule.min));
   } else if (max && !min && val > (rule.max as number)) {
-    errors.push(util.format(options.messages[key].max, options.name, rule.max));
+    errors.push(format(options.messages[key].max, options.name, rule.max));
   } else if (
     min &&
     max &&
     (val < (rule.min as number) || val > (rule.max as number))
   ) {
     errors.push(
-      util.format(options.messages[key].range, options.name, rule.min, rule.max)
+      format(options.messages[key].range, options.name, rule.min, rule.max)
     );
   }
 
