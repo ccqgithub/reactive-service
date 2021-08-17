@@ -26,7 +26,7 @@ type FieldState<T> = {
   // 字段是否正在验证
   validating: boolean;
   // 字段的错误
-  errors: Error[];
+  errors: ValidateError[];
 };
 
 type FieldResolve<T> = (state: FieldState<T>) => void;
@@ -52,8 +52,8 @@ class Field<T> {
   constructor(args: {
     name: string;
     defaultValue: T;
-    rules: any[];
-    first: boolean;
+    rules?: any[];
+    first?: boolean;
   }) {
     const { name = 'Field', defaultValue, rules = [], first = true } = args;
 
