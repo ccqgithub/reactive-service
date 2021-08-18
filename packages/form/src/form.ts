@@ -21,8 +21,15 @@ export default class Form<S extends Record<string, any>> extends Disposable {
     this.defaultValues = defaultValues;
   }
 
-  register(namePath: string, opts: { rules: FieldRule[] }) {
-    //
+  register(
+    namePath: string,
+    opts: { defaultValue: string; rules: FieldRule[] }
+  ) {
+    this.fields[namePath] = new Field({
+      name: namePath,
+      defaultValue: opts.defaultValue,
+      rules: opts.rules
+    });
   }
 
   unregister(namePath: string) {
