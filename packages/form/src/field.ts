@@ -7,6 +7,7 @@ import {
   map,
   reduce
 } from 'rxjs/operators';
+import Disposable from './disposable';
 import messages from './util/messages';
 import builtinRules from './rule';
 import ValidateError from './error';
@@ -31,11 +32,11 @@ type FieldState<T> = {
 
 type FieldResolve<T> = (state: FieldState<T>) => void;
 
-class Field<T> {
+class Field<T> extends Disposable {
   // 字段名称，在查看调试信息时很有用
   name: string;
   // 字段的状态
-  $state: BehaviorSubject<FieldState<T>>;
+  state$: BehaviorSubject<FieldState<T>>;
   // 为True时，如果第一个规则验证失败，则不再验证其他规则
   private first: boolean;
   // 字段的验证规则
@@ -45,7 +46,7 @@ class Field<T> {
   // 上一次验证的值，用来防止重复验证同一个值，提升效率
   private lastValidate?: T;
   // 验证流
-  private $validate: Subject<void> = new Subject();
+  private validate$: Subject<void> = new Subject();
   // 验证流的订阅
   private sub: Subscription | null = null;
 
@@ -55,12 +56,14 @@ class Field<T> {
     rules?: any[];
     first?: boolean;
   }) {
+    super();
+
     const { name = 'Field', defaultValue, rules = [], first = true } = args;
 
     this.name = name;
     this.rules = rules;
     this.first = first;
-    this.$state = new BehaviorSubject<FieldState<T>>({
+    this.state$ = new BehaviorSubject<FieldState<T>>({
       defaultValue,
       value: defaultValue,
       valid: true,
@@ -74,14 +77,14 @@ class Field<T> {
   }
 
   get state() {
-    return this.$state.value;
+    return this.state$.value;
   }
 
   private resetSubscribe() {
     if (this.sub) this.sub.unsubscribe();
     this.updateState({ validating: false });
     this.lastValidate = undefined;
-    this.sub = this.$validate
+    this.sub = this.validate$
       .pipe(
         tap(() => {
           this.lastValidate = this.state.value;
@@ -107,10 +110,14 @@ class Field<T> {
         })
       )
       .subscribe();
+
+    this.beforeDispose(() => {
+      this.sub && this.sub.unsubscribe();
+    });
   }
 
   private updateState(s: Partial<FieldState<T>>) {
-    this.$state.next({
+    this.state$.next({
       ...this.state,
       ...s
     });
@@ -209,7 +216,7 @@ class Field<T> {
   }
 
   reset(args: { defaultValue: T }) {
-    this.$state.next({
+    this.state$.next({
       defaultValue: args.defaultValue,
       value: args.defaultValue,
       valid: true,
@@ -223,7 +230,7 @@ class Field<T> {
 
   validate(force = false) {
     const needValidate = this.lastValidate !== this.state.value;
-    if (needValidate || force) this.$validate.next();
+    if (needValidate || force) this.validate$.next();
 
     const promise = new Promise<FieldState<T>>((resolve) => {
       if (this.state.validating) {
