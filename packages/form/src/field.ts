@@ -13,7 +13,7 @@ import builtinRules from './rule';
 import ValidateError from './error';
 import { FieldRule } from './types';
 
-type FieldState<T> = {
+export type FieldState<T> = {
   // 默认值
   defaultValue: T;
   // 字段的值
@@ -30,7 +30,7 @@ type FieldState<T> = {
   errors: ValidateError[];
 };
 
-type FieldResolve<T> = (state: FieldState<T>) => void;
+export type FieldResolve<T> = (state: FieldState<T>) => void;
 
 class Field<T> extends Disposable {
   // 字段名称，在查看调试信息时很有用
