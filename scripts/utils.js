@@ -1,5 +1,5 @@
 const fs = require('fs');
-const chalk = require('chalk');
+const chalk = require('chalk').default;
 
 const targets = (exports.targets = fs.readdirSync('packages').filter((f) => {
   if (!fs.statSync(`packages/${f}`).isDirectory()) {

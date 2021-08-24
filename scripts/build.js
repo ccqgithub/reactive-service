@@ -1,6 +1,6 @@
 const os = require('os');
 const path = require('path');
-const chalk = require('chalk');
+const chalk = require('chalk').default;
 const execa = require('execa');
 const fs = require('fs-extra');
 const minimist = require('minimist');
